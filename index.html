@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Hippo-Pippo (13) - Streaming Platform</title>
+
+  <!-- PWA Meta Tags -->
+  <meta name="theme-color" content="#7e22ce" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Hippo-Pippo (13)" />
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%237e22ce'/><text x='50%' y='65%' font-size='50' text-anchor='middle'>🦛</text></svg>" />
+
+  <!-- Inline Web App Manifest -->
+  <link rel="manifest" id="manifest-placeholder" />
+
+  <!-- Tailwind CSS, Lucide Icons & PeerJS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+
+  <style>
+    :root {
+      --color-purple: #7e22ce;
+      --color-red: #dc2626;
+      --color-green: #16a34a;
+    }
+    body {
+      background-color: #0d0714;
+      color: #f3f4f6;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      overflow-x: hidden;
+      margin: 0;
+    }
+    .hippo-bg-pattern {
+      background-image: radial-gradient(rgba(126, 34, 206, 0.15) 1px, transparent 0);
+      background-size: 24px 24px;
+    }
+    ::-webkit-scrollbar { height: 8px; width: 8px; }
+    ::-webkit-scrollbar-track { background: #0d0714; }
+    ::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #7e22ce; }
+    .glass-header {
+      background: rgba(13, 7, 20, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    .glass-card {
+      background: rgba(26, 16, 37, 0.7);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(126, 34, 206, 0.2);
+    }
+    .accent-glow-purple { box-shadow: 0 0 15px rgba(126, 34, 206, 0.4); }
+    .accent-glow-red { box-shadow: 0 0 15px rgba(220, 38, 38, 0.4); }
+    .accent-glow-green { box-shadow: 0 0 15px rgba(22, 163, 74, 0.4); }
+  </style>
+</head>
+<body class="hippo-bg-pattern min-h-screen flex flex-col justify-between select-none">
+
+  <!-- ADMIN BROADCAST OVERLAY -->
+  <div id="screenControlOverlay" class="fixed inset-x-0 top-16 z-50 hidden bg-red-950/95 border-b-2 border-red-600 p-4 shadow-2xl backdrop-blur-md flex items-center justify-between">
+    <div class="flex items-center space-x-3">
+      <span class="text-2xl animate-pulse">🚨</span>
+      <div>
+        <h4 class="text-xs font-bold text-red-400 uppercase tracking-widest">Admin Screen Broadcast</h4>
+        <p id="screenControlMessage" class="text-sm font-semibold text-white">Administrator has taken over screen control.</p>
+      </div>
+    </div>
+    <button onclick="dismissScreenControl()" class="bg-red-600 hover:bg-red-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg">Dismiss</button>
+  </div>
+
+  <!-- TOP NAVBAR -->
+  <header class="fixed top-0 left-0 right-0 z-40 glass-header border-b border-purple-900/30 transition-all duration-300">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      
+      <!-- Brand Logo -->
+      <div class="flex items-center space-x-3 cursor-pointer" onclick="resetView()">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-purple-700 via-red-600 to-green-600 flex items-center justify-center shadow-lg accent-glow-purple">
+          <span class="text-2xl">🦛</span>
+        </div>
+        <div>
+          <span class="text-xl font-black tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-red-400 to-green-400">
+            HIPPO-PIPPO
+          </span>
+          <span class="hidden sm:inline-block text-[10px] bg-purple-900/60 text-purple-300 px-1.5 py-0.5 rounded ml-2 font-mono border border-purple-500/30">v13</span>
+        </div>
+      </div>
+
+      <!-- Search Bar -->
+      <div class="flex-1 max-w-md mx-4 hidden md:block">
+        <div class="relative">
+          <input type="text" id="searchInput" oninput="handleSearch(this.value)" placeholder="Search films, series, or tags..." class="w-full bg-purple-950/40 border border-purple-800/40 rounded-full py-1.5 pl-10 pr-4 text-sm focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 text-gray-200 placeholder-gray-400" />
+          <i data-lucide="search" class="absolute left-3 top-2 w-4 h-4 text-purple-400"></i>
+        </div>
+      </div>
+
+      <!-- User Actions & PWA Install Button -->
+      <div class="flex items-center space-x-3" id="navbarActions"></div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTENT CONTAINER -->
+  <main class="pt-20 pb-16 flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8">
+    
+    <!-- PWA Installation Banner -->
+    <div id="pwaInstallBanner" class="hidden mb-6 p-4 rounded-2xl bg-gradient-to-r from-purple-900/80 via-red-900/60 to-green-900/80 border border-purple-500/40 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-2xl">
+      <div class="flex items-center space-x-3">
+        <div class="text-3xl">📱</div>
+        <div>
+          <h4 class="font-bold text-white text-sm">Install Hippo-Pippo (13) Application</h4>
+          <p class="text-xs text-purple-200">Add to your desktop or mobile home screen to run in a standalone window.</p>
+        </div>
+      </div>
+      <div class="flex items-center space-x-2">
+        <button onclick="dismissPwaBanner()" class="text-xs text-gray-400 hover:text-white px-3 py-1.5">Dismiss</button>
+        <button onclick="triggerPwaInstall()" class="bg-green-600 hover:bg-green-500 text-white font-bold text-xs px-4 py-2 rounded-xl shadow-lg accent-glow-green">Install App</button>
+      </div>
+    </div>
+
+    <!-- HERO SECTION -->
+    <section id="heroSection" class="relative rounded-3xl overflow-hidden mb-10 border border-purple-900/40 shadow-2xl bg-gradient-to-r from-purple-950 via-slate-900 to-zinc-900 min-h-[340px] flex items-center">
+      <div class="absolute inset-0 bg-cover bg-center opacity-30" style="background-image: url('data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><text y=\'50%\' font-size=\'90\'>🦛</text></svg>');"></div>
+      <div class="absolute inset-0 bg-gradient-to-t from-[#0d0714] via-transparent to-transparent"></div>
+      
+      <div class="relative z-10 p-6 sm:p-10 max-w-2xl">
+        <span class="inline-flex items-center space-x-1.5 bg-red-600/80 text-white text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider mb-3">
+          <i data-lucide="flame" class="w-3.5 h-3.5"></i>
+          <span>Featured Release</span>
+        </span>
+        <h1 class="text-3xl sm:text-5xl font-black tracking-tight text-white mb-3">Hippo-Pippo Originals</h1>
+        <p class="text-gray-300 text-sm sm:text-base line-clamp-3 mb-6">Stream high-definition thrillers, custom uploaded films, and exclusive content securely.</p>
+        
+        <div class="flex items-center space-x-4">
+          <button onclick="playHeroVideo()" class="bg-gradient-to-r from-red-600 to-purple-600 hover:from-red-500 hover:to-purple-500 text-white font-bold px-6 py-3 rounded-2xl flex items-center space-x-2 transition shadow-lg accent-glow-red">
+            <i data-lucide="play" class="w-5 h-5 fill-current"></i>
+            <span>Play Now</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- CATALOG SECTION -->
+    <section id="catalogSection"></section>
+  </main>
+
+  <!-- MODAL: AUTH / SIGN IN & SIGN UP FORM -->
+  <div id="authModal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="glass-card max-w-md w-full rounded-3xl p-6 relative border border-purple-500/30">
+      <button onclick="closeModal('authModal')" class="absolute top-4 right-4 text-gray-400 hover:text-white"><i data-lucide="x" class="w-6 h-6"></i></button>
+      <h3 id="authTitle" class="text-2xl font-bold text-white mb-2">Sign In</h3>
+      <p id="authSubtitle" class="text-xs text-purple-300 mb-6">Sign in to enjoy streaming on Hippo-Pippo.</p>
+      
+      <form id="authForm" onsubmit="handleAuthSubmit(event)" class="space-y-3">
+        <!-- Signup Specific Fields -->
+        <div id="signupFields" class="hidden space-y-3">
+          <div>
+            <label class="block text-xs font-semibold text-gray-300 mb-1">Full Name</label>
+            <input type="text" id="regFullName" class="w-full bg-purple-950/60 border border-purple-800/50 rounded-xl px-4 py-2 text-sm text-white" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-300 mb-1">Date of Birth</label>
+            <input type="date" id="regDob" class="w-full bg-purple-950/60 border border-purple-800/50 rounded-xl px-4 py-2 text-sm text-white" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-300 mb-1">Email Address</label>
+            <input type="email" id="regEmail" class="w-full bg-purple-950/60 border border-purple-800/50 rounded-xl px-4 py-2 text-sm text-white" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-300 mb-1">Username</label>
+          <input type="text" id="authUsername" required class="w-full bg-purple-950/60 border border-purple-800/50 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-purple-400" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-300 mb-1">Password</label>
+          <input type="password" id="authPassword" required class="w-full bg-purple-950/60 border border-purple-800/50 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-purple-400" />
+        </div>
+
+        <!-- Terms Checkbox for Sign Up -->
+        <div id="termsContainer" class="hidden items-start space-x-2 pt-2">
+          <input type="checkbox" id="regTerms" class="mt-1 rounded bg-purple-950 border-purple-800 text-purple-600 focus:ring-purple-500" />
+          <label for="regTerms" class="text-xs text-gray-300">I agree to the terms of service and use policy.</label>
+        </div>
+
+        <button type="submit" class="w-full bg-gradient-to-r from-purple-600 via-red-600 to-green-600 text-white font-bold py-3 rounded-xl shadow-lg mt-2">Submit</button>
+      </form>
+
+      <div class="mt-4 text-center">
+        <button onclick="toggleAuthMode()" id="authToggleBtn" class="text-xs text-purple-400 hover:underline">Need an account? Sign Up</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ADMIN LOGIN -->
+  <div id="adminModal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="glass-card max-w-md w-full rounded-3xl p-6 relative border border-red-500/40">
+      <button onclick="closeModal('adminModal')" class="absolute top-4 right-4 text-gray-400 hover:text-white"><i data-lucide="x" class="w-6 h-6"></i></button>
+      <div class="flex items-center space-x-2 mb-2">
+        <i data-lucide="shield-alert" class="w-6 h-6 text-red-500"></i>
+        <h3 class="text-2xl font-bold text-white">Admin Login</h3>
+      </div>
+      <p class="text-xs text-red-300 mb-6">Enter administrator credentials (Daniel or Eadams).</p>
+      <form onsubmit="handleAdminSubmit(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-gray-300 mb-1">Admin Username</label>
+          <input type="text" id="adminUsername" placeholder="Daniel / Eadams" required class="w-full bg-purple-950/60 border border-red-800/50 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-red-500" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-300 mb-1">Password</label>
+          <input type="password" id="adminPassword" placeholder="••••••••" required class="w-full bg-purple-950/60 border border-red-800/50 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-red-500" />
+        </div>
+        <button type="submit" class="w-full bg-gradient-to-r from-red-600 to-purple-600 text-white font-bold py-3 rounded-xl shadow-lg">Log In as Admin</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: USERS DATABASE MANAGEMENT (WITH EXPANDABLE SIGNUP DETAILS DROPDOWN) -->
+  <div id="usersDbModal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="glass-card max-w-3xl w-full rounded-3xl p-6 relative border border-purple-500/40 max-h-[85vh] flex flex-col">
+      <button onclick="closeModal('usersDbModal')" class="absolute top-4 right-4 text-gray-400 hover:text-white"><i data-lucide="x" class="w-6 h-6"></i></button>
+      <div class="flex items-center justify-between mb-2">
+        <h3 class="text-xl font-bold text-white flex items-center gap-2">
+          <i data-lucide="database" class="text-purple-400"></i> Platform Database & Sign-up Details
+        </h3>
+        <button onclick="clearBanList()" class="text-[10px] text-red-400 hover:underline bg-red-950/60 border border-red-800/40 px-2 py-1 rounded-lg">Unban All IPs</button>
+      </div>
+      <p class="text-xs text-purple-300 mb-4">Click on any user's name below to open their full sign-up information dropdown.</p>
+      
+      <div class="overflow-y-auto flex-grow pr-1 space-y-3" id="usersListContainer"></div>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD NEW ADMIN -->
+  <div id="addAdminModal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="glass-card max-w-md w-full rounded-3xl p-6 relative border border-purple-500/40">
+      <button onclick="closeModal('addAdminModal')" class="absolute top-4 right-4 text-gray-400 hover:text-white"><i data-lucide="x" class="w-6 h-6"></i></button>
+      <h3 class="text-xl font-bold text-white mb-2 flex items-center gap-2">
+        <i data-lucide="user-plus" class="text-purple-400"></i> Add New Administrator
+      </h3>
+      <p class="text-xs text-purple-300 mb-6">Grant full administrator access to another user.</p>
+      <form onsubmit="handleAddAdminSubmit(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-gray-300 mb-1">New Admin Username</label>
+          <input type="text" id="newAdminUsername" required class="w-full bg-purple-950/60 border border-purple-800/50 rounded-xl px-4 py-2.5 text-sm text-white" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-300 mb-1">Password</label>
+          <input type="password" id="newAdminPassword" required class="w-full bg-purple-950/60 border border-purple-800/50 rounded-xl px-4 py-2.5 text-sm text-white" />
+        </div>
+        <button type="submit" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 rounded-xl shadow-lg">Register Admin</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: SCREEN CONTROL (ADMIN) -->
+  <div id="screenControlModal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="glass-card max-w-md w-full rounded-3xl p-6 relative border border-red-500/40">
+      <button onclick="closeModal('screenControlModal')" class="absolute top-4 right-4 text-gray-400 hover:text-white"><i data-lucide="x" class="w-6 h-6"></i></button>
+      <h3 class="text-xl font-bold text-white mb-2 flex items-center gap-2">
+        <i data-lucide="monitor" class="text-red-500"></i> Screen Control & Broadcast
+      </h3>
+      <p class="text-xs text-red-300 mb-6">Send a mandatory alert across all connected client screens.</p>
+      <form onsubmit="handleScreenBroadcast(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-gray-300 mb-1">Broadcast Message</label>
+          <textarea id="broadcastMsg" rows="3" placeholder="Attention: Please pause playback." required class="w-full bg-purple-950/60 border border-red-800/50 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-red-500"></textarea>
+        </div>
+        <button type="submit" class="w-full bg-gradient-to-r from-red-600 to-purple-600 text-white font-bold py-3 rounded-xl shadow-lg">Broadcast to All Devices</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: VIDEO UPLOAD -->
+  <div id="uploadModal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="glass-card max-w-lg w-full rounded-3xl p-6 relative border border-green-500/40">
+      <button onclick="closeModal('uploadModal')" class="absolute top-4 right-4 text-gray-400 hover:text-white"><i data-lucide="x" class="w-6 h-6"></i></button>
+      <h3 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
+        <i data-lucide="upload" class="text-green-500"></i> Upload New Media
+      </h3>
+      <form onsubmit="handleUploadSubmit(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-gray-300 mb-1">Title</label>
+          <input type="text" id="uploadTitle" required class="w-full bg-purple-950/60 border border-purple-800/50 rounded-xl px-4 py-2 text-sm text-white" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-300 mb-1">Category</label>
+          <select id="uploadCategory" class="w-full bg-purple-950/60 border border-purple-800/50 rounded-xl px-4 py-2 text-sm text-white">
+            <option value="Trending Now">Trending Now</option>
+            <option value="Scary & Thrillers">Scary & Thrillers</option>
+            <option value="Hippo Originals">Hippo Originals</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-300 mb-1">Video File (MP4/WebM)</label>
+          <input type="file" id="uploadVideoFile" accept="video/*" required class="w-full text-xs text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-purple-800 file:text-white hover:file:bg-purple-700" />
+        </div>
+        <button type="submit" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-xl shadow-lg accent-glow-green">Engrave & Broadcast</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: VIDEO PLAYER -->
+  <div id="playerModal" class="fixed inset-0 z-50 hidden bg-black/95 flex items-center justify-center p-2 sm:p-6">
+    <div class="relative w-full max-w-5xl bg-black rounded-3xl overflow-hidden border border-purple-900/60 shadow-2xl">
+      <button onclick="closePlayer()" class="absolute top-4 right-4 z-10 bg-black/60 hover:bg-red-600 text-white rounded-full p-2 transition"><i data-lucide="x" class="w-6 h-6"></i></button>
+      <div class="aspect-video w-full bg-black flex items-center justify-center">
+        <video id="mainVideoPlayer" controls inlineplays webkit-playsinline class="w-full h-full"></video>
+      </div>
+      <div class="p-4 bg-purple-950/40 flex justify-between items-center">
+        <h4 id="playerVideoTitle" class="text-white font-bold text-lg">Playing Video</h4>
+        <span class="text-xs text-purple-400 font-mono">Hippo-Pippo Player</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="border-t border-purple-900/30 py-6 text-center text-xs text-purple-400">
+    <p>© 2026 Hippo-Pippo (13) Streaming Platform. PWA Edition.</p>
+  </footer>
+
+  <script>
+    // URL Emergency Reset Guard (?reset=true)
+    if (window.location.search.includes('reset=true')) {
+      localStorage.removeItem('hippo_banned_list');
+      localStorage.removeItem('hippo_user');
+      alert('Security Ban List cleared! You can now log back in.');
+      window.location.href = window.location.pathname;
+    }
+
+    /* PWA Manifest & Service Worker */
+    const pwaManifest = {
+      name: "Hippo-Pippo (13)",
+      short_name: "HippoPippo13",
+      start_url: "./",
+      display: "standalone",
+      background_color: "#0d0714",
+      theme_color: "#7e22ce",
+      icons: [{
+        src: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%237e22ce'/><text x='50%' y='65%' font-size='50' text-anchor='middle'>🦛</text></svg>",
+        sizes: "512x512",
+        type: "image/svg+xml"
+      }]
+    };
+    document.getElementById('manifest-placeholder').setAttribute('href', 'data:application/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(pwaManifest)));
+
+    if ('serviceWorker' in navigator) {
+      const swCode = `
+        self.addEventListener('install', (e) => { e.waitUntil(self.skipWaiting()); });
+        self.addEventListener('activate', (e) => { e.waitUntil(self.clients.claim()); });
+        self.addEventListener('fetch', (e) => {
+          e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
+        });
+      `;
+      const blob = new Blob([swCode], { type: 'text/javascript' });
+      navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(console.error);
+    }
+
+    let deferredPwaPrompt = null;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPwaPrompt = e;
+      document.getElementById('pwaInstallBanner').classList.remove('hidden');
+    });
+
+    function triggerPwaInstall() {
+      if (deferredPwaPrompt) {
+        deferredPwaPrompt.prompt();
+        deferredPwaPrompt.userChoice.then(() => {
+          deferredPwaPrompt = null;
+          dismissPwaBanner();
+        });
+      }
+    }
+    function dismissPwaBanner() { document.getElementById('pwaInstallBanner').classList.add('hidden'); }
+
+    /* Client IP Retrieval (Safe Default) */
+    let currentClientIP = null;
+    fetch('https://api.ipify.org?format=json')
+      .then(r => r.json())
+      .then(d => { if(d.ip) currentClientIP = d.ip; })
+      .catch(() => {});
+
+    /* IndexedDB Storage */
+    const DB_NAME = 'hippo_media_db_v13';
+    function openDB() {
+      return new Promise((resolve, reject) => {
+        const req = indexedDB.open(DB_NAME, 1);
+        req.onupgradeneeded = e => { if (!e.target.result.objectStoreNames.contains('media')) e.target.result.createObjectStore('media', { keyPath: 'id' }); };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+    async function saveMediaBlob(id, file) {
+      const db = await openDB();
+      return new Promise((res, rej) => {
+        const tx = db.transaction('media', 'readwrite');
+        tx.objectStore('media').put({ id, blob: file });
+        tx.oncomplete = () => res();
+        tx.onerror = () => rej(tx.error);
+      });
+    }
+    async function getMediaBlob(id) {
+      const db = await openDB();
+      return new Promise((res, rej) => {
+        const tx = db.transaction('media', 'readonly');
+        const req = tx.objectStore('media').get(id);
+        req.onsuccess = () => res(req.result ? req.result.blob : null);
+        req.onerror = () => rej(req.error);
+      });
+    }
+
+    /* Core Application Registry */
+    let defaultAdmins = [
+      { username: 'Daniel', password: 'Daniel' },
+      { username: 'Eadams', password: 'Floof2020' }
+    ];
+    let savedAdmins = JSON.parse(localStorage.getItem('hippo_admins')) || defaultAdmins;
+    let registeredUsers = JSON.parse(localStorage.getItem('hippo_users_db')) || [
+      { username: 'Daniel', fullName: 'Daniel Administrator', dob: 'N/A', email: 'daniel@hippopippo.com', role: 'admin', ip: 'Admin-System-ID', registeredAt: 'System Master' },
+      { username: 'Eadams', fullName: 'Eadams Administrator', dob: 'N/A', email: 'eadams@hippopippo.com', role: 'admin', ip: 'Admin-System-ID', registeredAt: 'System Master' }
+    ];
+    let bannedList = JSON.parse(localStorage.getItem('hippo_banned_list')) || [];
+
+    const baseCodeCatalog = [
+      { id: '1', title: 'The Purple Hippo Legacy', category: 'Hippo Originals', desc: 'An thrilling journey across deep rivers.', tags: ['Original', 'Action'] },
+      { id: '2', title: 'Midnight Whispers', category: 'Scary & Thrillers', desc: 'A spine-chilling 7+ rated horror adventure.', tags: ['Scary', 'Suspense'] },
+      { id: '3', title: 'Capdepera Golf Nights', category: 'Trending Now', desc: 'Exploring lush green fairways under moonlight.', tags: ['Sports', 'Trending'] }
+    ];
+
+    let state = {
+      currentUser: JSON.parse(localStorage.getItem('hippo_user')) || null,
+      isAdmin: false,
+      catalog: JSON.parse(localStorage.getItem('hippo_catalog')) || baseCodeCatalog,
+      authMode: 'signin'
+    };
+
+    function checkBanStatus() {
+      if (!state.currentUser) return false;
+      const uName = state.currentUser.username.toLowerCase();
+      const isBanned = bannedList.some(b => 
+        b.username.toLowerCase() === uName || (currentClientIP && b.ip && b.ip === currentClientIP && b.ip !== 'Admin-System-ID')
+      );
+      
+      if (isBanned) {
+        alert('ACCESS DENIED: Your account or IP address is banned from Hippo-Pippo.');
+        handleLogout();
+        return true;
+      }
+      return false;
+    }
+
+    if (state.currentUser) {
+      if (!checkBanStatus()) {
+        const isDefaultAdmin = savedAdmins.some(a => a.username.toLowerCase() === state.currentUser.username.toLowerCase());
+        if (isDefaultAdmin || state.currentUser.role === 'admin') {
+          state.isAdmin = true;
+        }
+      }
+    }
+
+    function saveCatalog() {
+      localStorage.setItem('hippo_catalog', JSON.stringify(state.catalog));
+      renderCatalog();
+    }
+
+    function init() {
+      checkBanStatus();
+      lucide.createIcons();
+      renderNavbar();
+      renderCatalog();
+    }
+
+    function openSignUpModal() {
+      state.authMode = 'signup';
+      document.getElementById('authTitle').innerText = 'Create Account';
+      document.getElementById('authSubtitle').innerText = 'Provide your details to register.';
+      document.getElementById('authToggleBtn').innerText = 'Have an account? Sign In';
+      
+      document.getElementById('signupFields').classList.remove('hidden');
+      const termsContainer = document.getElementById('termsContainer');
+      termsContainer.classList.remove('hidden');
+      termsContainer.classList.add('flex');
+      
+      openModal('authModal');
+    }
+
+    function openSignInModal() {
+      state.authMode = 'signin';
+      document.getElementById('authTitle').innerText = 'Sign In';
+      document.getElementById('authSubtitle').innerText = 'Sign in to enjoy streaming on Hippo-Pippo.';
+      document.getElementById('authToggleBtn').innerText = 'Need an account? Sign Up';
+      
+      document.getElementById('signupFields').classList.add('hidden');
+      const termsContainer = document.getElementById('termsContainer');
+      termsContainer.classList.add('hidden');
+      termsContainer.classList.remove('flex');
+      
+      openModal('authModal');
+    }
+
+    function toggleAuthMode() {
+      if (state.authMode === 'signin') {
+        openSignUpModal();
+      } else {
+        openSignInModal();
+      }
+    }
+
+    function renderNavbar() {
+      const container = document.getElementById('navbarActions');
+      let html = '';
+      if (state.currentUser) {
+        if (state.isAdmin) {
+          html += `
+            <button onclick="openModal('uploadModal')" class="bg-green-600 hover:bg-green-500 text-white text-xs font-bold px-3 py-1.5 rounded-xl flex items-center gap-1 shadow-md">
+              <i data-lucide="plus" class="w-4 h-4"></i> Upload
+            </button>
+            <button onclick="openModal('addAdminModal')" class="bg-purple-800 hover:bg-purple-700 text-white text-xs font-bold px-3 py-1.5 rounded-xl flex items-center gap-1 border border-purple-500/40">
+              <i data-lucide="user-plus" class="w-4 h-4"></i> Add Admins
+            </button>
+            <button onclick="openUsersDbModal()" class="bg-purple-950 hover:bg-purple-900 text-purple-200 text-xs font-bold px-3 py-1.5 rounded-xl flex items-center gap-1 border border-purple-600/50">
+              <i data-lucide="database" class="w-4 h-4 text-purple-400"></i> Users DB
+            </button>
+            <button onclick="openModal('screenControlModal')" class="bg-red-900/80 hover:bg-red-800 text-red-200 text-xs font-bold px-3 py-1.5 rounded-xl flex items-center gap-1 border border-red-600/50">
+              <i data-lucide="monitor" class="w-4 h-4 text-red-400"></i> Screen Control
+            </button>
+          `;
+        }
+        html += `
+          <div class="flex items-center space-x-2 bg-purple-950/60 border border-purple-800/40 rounded-xl px-3 py-1">
+            <span class="w-6 h-6 rounded-full bg-gradient-to-r from-purple-500 to-red-500 text-white flex items-center justify-center font-bold text-xs">
+              ${state.currentUser.username.charAt(0).toUpperCase()}
+            </span>
+            <span class="text-xs text-gray-200 max-w-[90px] truncate">${state.currentUser.username}</span>
+            <button onclick="handleLogout()" class="text-gray-400 hover:text-red-400 ml-1"><i data-lucide="log-out" class="w-4 h-4"></i></button>
+          </div>
+        `;
+      } else {
+        html += `
+          <button onclick="openModal('adminModal')" class="text-xs text-purple-400 hover:text-white underline px-2">Admin</button>
+          <button onclick="openSignInModal()" class="bg-purple-900/60 hover:bg-purple-800 text-purple-200 font-bold text-xs px-3 py-2 rounded-xl border border-purple-600/50">Sign In</button>
+          <button onclick="openSignUpModal()" class="bg-gradient-to-r from-green-600 to-purple-600 hover:from-green-500 hover:to-purple-500 text-white font-bold text-xs px-4 py-2 rounded-xl shadow-md accent-glow-green">
+            Sign Up
+          </button>
+        `;
+      }
+      container.innerHTML = html;
+      lucide.createIcons();
+    }
+
+    function renderCatalog(filterText = '') {
+      const container = document.getElementById('catalogSection');
+      const categories = ['Trending Now', 'Scary & Thrillers', 'Hippo Originals'];
+      let html = '';
+
+      categories.forEach(cat => {
+        const items = state.catalog.filter(i => i.category === cat && (i.title.toLowerCase().includes(filterText.toLowerCase()) || cat.toLowerCase().includes(filterText.toLowerCase())));
+        if (items.length > 0) {
+          html += `
+            <div class="mb-8">
+              <h3 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                <span class="w-2 h-5 bg-gradient-to-b from-purple-500 to-red-500 rounded-full"></span>
+                ${cat}
+              </h3>
+              <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                ${items.map(item => `
+                  <div class="glass-card rounded-2xl overflow-hidden hover:scale-[1.02] transition duration-200 cursor-pointer flex flex-col justify-between" onclick="playMedia('${item.id}', '${item.title}')">
+                    <div class="aspect-video bg-purple-950/80 relative flex items-center justify-center">
+                      <span class="text-4xl">🦛</span>
+                      <div class="absolute inset-0 bg-black/40 hover:bg-black/20 flex items-center justify-center">
+                        <div class="w-12 h-12 rounded-full bg-red-600/90 text-white flex items-center justify-center shadow-lg accent-glow-red">
+                          <i data-lucide="play" class="w-6 h-6 fill-current ml-0.5"></i>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="p-4 flex-grow flex flex-col justify-between">
+                      <div>
+                        <h4 class="font-bold text-white text-base mb-1">${item.title}</h4>
+                        <p class="text-xs text-gray-400 line-clamp-2">${item.desc}</p>
+                      </div>
+                      <div class="mt-3 flex items-center justify-between text-[11px] text-purple-300">
+                        <span class="bg-purple-900/40 px-2 py-0.5 rounded border border-purple-700/30">${item.category}</span>
+                        ${state.isAdmin ? `<button onclick="event.stopPropagation(); deleteItem('${item.id}')" class="text-red-400 hover:underline">Delete</button>` : ''}
+                      </div>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `;
+        }
+      });
+      container.innerHTML = html || `<p class="text-gray-400 text-center py-10">No videos found.</p>`;
+      lucide.createIcons();
+    }
+
+    function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+    function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+    /* USERS DATABASE WITH DROPDOWN SIGN-UP DETAILS */
+    function openUsersDbModal() {
+      const container = document.getElementById('usersListContainer');
+      let html = `
+        <div class="grid grid-cols-4 bg-purple-950/80 p-3 rounded-xl text-xs font-bold text-purple-300 border border-purple-800/40">
+          <div>Username (Click for details)</div>
+          <div>Role</div>
+          <div>IP Address</div>
+          <div class="text-right">Action</div>
+        </div>
+      `;
+
+      registeredUsers.forEach((usr, idx) => {
+        html += `
+          <div class="bg-purple-950/40 rounded-xl border border-purple-900/40 overflow-hidden">
+            <div class="grid grid-cols-4 items-center p-3 text-xs text-gray-200 cursor-pointer hover:bg-purple-900/30 transition" onclick="toggleUserDetails(${idx})">
+              <div class="font-semibold flex items-center gap-2">
+                <span class="w-5 h-5 rounded-full bg-purple-800 text-white flex items-center justify-center text-[10px]">${usr.username.charAt(0)}</span>
+                <span class="hover:underline flex items-center gap-1">
+                  ${usr.username}
+                  <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-purple-400 transition-transform duration-200" id="arrow-${idx}"></i>
+                </span>
+              </div>
+              <div>
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold ${usr.role === 'admin' ? 'bg-red-950 text-red-300 border border-red-700/40' : 'bg-purple-900/40 text-purple-300'}">
+                  ${usr.role.toUpperCase()}
+                </span>
+              </div>
+              <div class="font-mono text-[10px] text-gray-400">${usr.ip || 'Dynamic IP'}</div>
+              <div class="text-right" onclick="event.stopPropagation()">
+                <button onclick="kickUser(${idx})" class="bg-red-600 hover:bg-red-500 text-white text-[10px] font-bold px-3 py-1 rounded-lg shadow accent-glow-red">Kick & Ban IP</button>
+              </div>
+            </div>
+
+            <!-- SIGNUP DETAILS DROPDOWN CONTAINER -->
+            <div id="user-details-${idx}" class="hidden bg-purple-950/90 p-4 border-t border-purple-800/40 text-xs text-gray-300">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div class="bg-purple-900/30 p-2.5 rounded-xl border border-purple-700/30">
+                  <span class="text-[10px] text-purple-400 block font-bold uppercase">Full Name</span>
+                  <span class="font-semibold text-white">${usr.fullName || 'Not Provided'}</span>
+                </div>
+                <div class="bg-purple-900/30 p-2.5 rounded-xl border border-purple-700/30">
+                  <span class="text-[10px] text-purple-400 block font-bold uppercase">Date of Birth</span>
+                  <span class="font-semibold text-white">${usr.dob || 'Not Provided'}</span>
+                </div>
+                <div class="bg-purple-900/30 p-2.5 rounded-xl border border-purple-700/30">
+                  <span class="text-[10px] text-purple-400 block font-bold uppercase">Email Address</span>
+                  <span class="font-semibold text-white">${usr.email || 'Not Provided'}</span>
+                </div>
+                <div class="bg-purple-900/30 p-2.5 rounded-xl border border-purple-700/30">
+                  <span class="text-[10px] text-purple-400 block font-bold uppercase">Registration Date</span>
+                  <span class="font-semibold text-white">${usr.registeredAt || 'System Registered'}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+      openModal('usersDbModal');
+      lucide.createIcons();
+    }
+
+    function toggleUserDetails(idx) {
+      const detailsBox = document.getElementById(`user-details-${idx}`);
+      const arrowIcon = document.getElementById(`arrow-${idx}`);
+      if (detailsBox) {
+        const isHidden = detailsBox.classList.contains('hidden');
+        if (isHidden) {
+          detailsBox.classList.remove('hidden');
+          if (arrowIcon) arrowIcon.style.transform = 'rotate(180deg)';
+        } else {
+          detailsBox.classList.add('hidden');
+          if (arrowIcon) arrowIcon.style.transform = 'rotate(0deg)';
+        }
+      }
+    }
+
+    function kickUser(idx) {
+      if (!state.isAdmin) return;
+      const target = registeredUsers[idx];
+      if (!target) return;
+
+      const targetIp = target.ip && target.ip !== 'Admin-System-ID' ? target.ip : currentClientIP;
+      
+      bannedList.push({ username: target.username.toLowerCase(), ip: targetIp });
+      localStorage.setItem('hippo_banned_list', JSON.stringify(bannedList));
+
+      registeredUsers.splice(idx, 1);
+      localStorage.setItem('hippo_users_db', JSON.stringify(registeredUsers));
+
+      savedAdmins = savedAdmins.filter(a => a.username.toLowerCase() !== target.username.toLowerCase());
+      localStorage.setItem('hippo_admins', JSON.stringify(savedAdmins));
+
+      alert(`User "${target.username}" has been kicked and banned.`);
+      openUsersDbModal();
+    }
+
+    function clearBanList() {
+      bannedList = [];
+      localStorage.removeItem('hippo_banned_list');
+      alert('All banned users and IP restrictions cleared!');
+    }
+
+    function handleAuthSubmit(e) {
+      e.preventDefault();
+      const u = document.getElementById('authUsername').value.trim();
+
+      if (bannedList.some(b => b.username.toLowerCase() === u.toLowerCase())) {
+        alert('Access Denied: Your username has been banned.');
+        return;
+      }
+
+      if (state.authMode === 'signup') {
+        const fullName = document.getElementById('regFullName').value.trim();
+        const dob = document.getElementById('regDob').value;
+        const email = document.getElementById('regEmail').value.trim();
+        const termsAccepted = document.getElementById('regTerms').checked;
+
+        if (!fullName || !dob || !email) {
+          alert('Please fill out all required fields: Full Name, DOB, and Email.');
+          return;
+        }
+        if (!termsAccepted) {
+          alert('You must tick and agree to the terms of service and use policy to register.');
+          return;
+        }
+
+        const now = new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        registeredUsers.push({ 
+          username: u, 
+          fullName: fullName, 
+          dob: dob, 
+          email: email, 
+          role: 'user', 
+          ip: currentClientIP || 'Dynamic IP',
+          registeredAt: now
+        });
+        localStorage.setItem('hippo_users_db', JSON.stringify(registeredUsers));
+      }
+
+      state.currentUser = { username: u, role: 'user', ip: currentClientIP || 'Dynamic IP' };
+      state.isAdmin = false;
+      localStorage.setItem('hippo_user', JSON.stringify(state.currentUser));
+      closeModal('authModal');
+      renderNavbar();
+    }
+
+    function handleAdminSubmit(e) {
+      e.preventDefault();
+      const u = document.getElementById('adminUsername').value.trim();
+      const p = document.getElementById('adminPassword').value.trim();
+
+      if (bannedList.some(b => b.username.toLowerCase() === u.toLowerCase())) {
+        alert('Access Denied: Banned credentials.');
+        return;
+      }
+
+      const matched = savedAdmins.find(a => a.username.toLowerCase() === u.toLowerCase() && a.password === p);
+
+      if (matched) {
+        state.currentUser = { username: matched.username, role: 'admin', ip: currentClientIP || 'Admin-System-ID' };
+        state.isAdmin = true;
+        localStorage.setItem('hippo_user', JSON.stringify(state.currentUser));
+        closeModal('adminModal');
+        renderNavbar();
+        renderCatalog();
+      } else {
+        alert('Invalid Admin credentials!');
+      }
+    }
+
+    function handleAddAdminSubmit(e) {
+      e.preventDefault();
+      if (!state.isAdmin) return;
+      const u = document.getElementById('newAdminUsername').value.trim();
+      const p = document.getElementById('newAdminPassword').value.trim();
+
+      if (savedAdmins.some(a => a.username.toLowerCase() === u.toLowerCase())) {
+        alert('An admin with this username already exists!');
+        return;
+      }
+
+      savedAdmins.push({ username: u, password: p });
+      localStorage.setItem('hippo_admins', JSON.stringify(savedAdmins));
+
+      if (!registeredUsers.some(r => r.username.toLowerCase() === u.toLowerCase())) {
+        registeredUsers.push({ username: u, fullName: u + ' Admin', dob: 'N/A', email: u.toLowerCase() + '@admin.hippo', role: 'admin', ip: currentClientIP || 'Admin-System-ID', registeredAt: 'Admin Created' });
+      } else {
+        const existing = registeredUsers.find(r => r.username.toLowerCase() === u.toLowerCase());
+        if (existing) existing.role = 'admin';
+      }
+      localStorage.setItem('hippo_users_db', JSON.stringify(registeredUsers));
+
+      closeModal('addAdminModal');
+      alert(`Admin "${u}" added successfully!`);
+    }
+
+    function handleLogout() {
+      state.currentUser = null;
+      state.isAdmin = false;
+      localStorage.removeItem('hippo_user');
+      renderNavbar();
+      renderCatalog();
+    }
+
+    async function playMedia(id, title) {
+      if (checkBanStatus()) return;
+      if (!state.currentUser) { openSignInModal(); return; }
+      const player = document.getElementById('mainVideoPlayer');
+      const blob = await getMediaBlob(id);
+      player.src = blob ? URL.createObjectURL(blob) : 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
+      document.getElementById('playerVideoTitle').innerText = title;
+      openModal('playerModal');
+      player.play().catch(console.error);
+    }
+
+    function playHeroVideo() { playMedia('1', 'Hippo-Pippo Originals'); }
+    function closePlayer() {
+      const player = document.getElementById('mainVideoPlayer');
+      player.pause();
+      player.src = '';
+      closeModal('playerModal');
+    }
+
+    async function handleUploadSubmit(e) {
+      e.preventDefault();
+      if (!state.isAdmin) return;
+      const title = document.getElementById('uploadTitle').value;
+      const category = document.getElementById('uploadCategory').value;
+      const file = document.getElementById('uploadVideoFile').files[0];
+      if (!file) return;
+
+      const id = Date.now().toString();
+      await saveMediaBlob(id, file);
+      
+      state.catalog.push({ id, title, category, desc: 'Engraved video file.', tags: ['Engraved'] });
+      saveCatalog();
+      closeModal('uploadModal');
+      alert('Video engraved into code catalog successfully!');
+    }
+
+    function deleteItem(id) {
+      if (!state.isAdmin) return;
+      state.catalog = state.catalog.filter(i => i.id !== id);
+      saveCatalog();
+    }
+
+    function handleScreenBroadcast(e) {
+      e.preventDefault();
+      if (!state.isAdmin) return;
+      const msg = document.getElementById('broadcastMsg').value;
+      document.getElementById('screenControlMessage').innerText = msg;
+      document.getElementById('screenControlOverlay').classList.remove('hidden');
+      closeModal('screenControlModal');
+      alert('Screen broadcast activated!');
+    }
+
+    function dismissScreenControl() {
+      document.getElementById('screenControlOverlay').classList.add('hidden');
+    }
+
+    function handleSearch(val) { renderCatalog(val); }
+    function resetView() { document.getElementById('searchInput').value = ''; renderCatalog(); }
+
+    window.onload = init;
+  </script>
+</body>
+</html>
