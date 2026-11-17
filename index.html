@@ -215,7 +215,7 @@
     </div>
   </div>
 
-  <!-- MODAL: USERS DATABASE MANAGEMENT (WITH EXPANDABLE SIGNUP DETAILS DROPDOWN) -->
+  <!-- MODAL: USERS DATABASE MANAGEMENT -->
   <div id="usersDbModal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
     <div class="glass-card max-w-3xl w-full rounded-3xl p-6 relative border border-purple-500/40 max-h-[85vh] flex flex-col">
       <button onclick="closeModal('usersDbModal')" class="absolute top-4 right-4 text-gray-400 hover:text-white"><i data-lucide="x" class="w-6 h-6"></i></button>
@@ -324,7 +324,8 @@
     if (window.location.search.includes('reset=true')) {
       localStorage.removeItem('hippo_banned_list');
       localStorage.removeItem('hippo_user');
-      alert('Security Ban List cleared! You can now log back in.');
+      localStorage.removeItem('hippo_users_db');
+      alert('Security & Database reset complete! You can now log back in.');
       window.location.href = window.location.pathname;
     }
 
@@ -416,10 +417,26 @@
       { username: 'Eadams', password: 'Floof2020' }
     ];
     let savedAdmins = JSON.parse(localStorage.getItem('hippo_admins')) || defaultAdmins;
-    let registeredUsers = JSON.parse(localStorage.getItem('hippo_users_db')) || [
+    
+    let defaultUsers = [
       { username: 'Daniel', fullName: 'Daniel Administrator', dob: 'N/A', email: 'daniel@hippopippo.com', role: 'admin', ip: 'Admin-System-ID', registeredAt: 'System Master' },
       { username: 'Eadams', fullName: 'Eadams Administrator', dob: 'N/A', email: 'eadams@hippopippo.com', role: 'admin', ip: 'Admin-System-ID', registeredAt: 'System Master' }
     ];
+    
+    let registeredUsers = JSON.parse(localStorage.getItem('hippo_users_db')) || defaultUsers;
+
+    // Local Storage Data Sanitizer Guard
+    registeredUsers = registeredUsers.map(u => ({
+      username: u.username || 'Unknown',
+      fullName: u.fullName || u.username + ' (User)',
+      dob: u.dob || 'Not Provided',
+      email: u.email || 'Not Provided',
+      role: u.role || 'user',
+      ip: u.ip || 'Dynamic IP',
+      registeredAt: u.registeredAt || 'Existing Account'
+    }));
+    localStorage.setItem('hippo_users_db', JSON.stringify(registeredUsers));
+
     let bannedList = JSON.parse(localStorage.getItem('hippo_banned_list')) || [];
 
     const baseCodeCatalog = [
@@ -466,7 +483,7 @@
 
     function init() {
       checkBanStatus();
-      lucide.createIcons();
+      if (window.lucide) lucide.createIcons();
       renderNavbar();
       renderCatalog();
     }
@@ -546,7 +563,7 @@
         `;
       }
       container.innerHTML = html;
-      lucide.createIcons();
+      if (window.lucide) lucide.createIcons();
     }
 
     function renderCatalog(filterText = '') {
@@ -592,13 +609,13 @@
         }
       });
       container.innerHTML = html || `<p class="text-gray-400 text-center py-10">No videos found.</p>`;
-      lucide.createIcons();
+      if (window.lucide) lucide.createIcons();
     }
 
     function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
     function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
 
-    /* USERS DATABASE WITH DROPDOWN SIGN-UP DETAILS */
+    /* SAFE USERS DATABASE OPENER */
     function openUsersDbModal() {
       const container = document.getElementById('usersListContainer');
       let html = `
@@ -615,15 +632,15 @@
           <div class="bg-purple-950/40 rounded-xl border border-purple-900/40 overflow-hidden">
             <div class="grid grid-cols-4 items-center p-3 text-xs text-gray-200 cursor-pointer hover:bg-purple-900/30 transition" onclick="toggleUserDetails(${idx})">
               <div class="font-semibold flex items-center gap-2">
-                <span class="w-5 h-5 rounded-full bg-purple-800 text-white flex items-center justify-center text-[10px]">${usr.username.charAt(0)}</span>
+                <span class="w-5 h-5 rounded-full bg-purple-800 text-white flex items-center justify-center text-[10px]">${(usr.username || 'U').charAt(0)}</span>
                 <span class="hover:underline flex items-center gap-1">
-                  ${usr.username}
+                  ${usr.username || 'User'}
                   <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-purple-400 transition-transform duration-200" id="arrow-${idx}"></i>
                 </span>
               </div>
               <div>
                 <span class="px-2 py-0.5 rounded text-[10px] font-bold ${usr.role === 'admin' ? 'bg-red-950 text-red-300 border border-red-700/40' : 'bg-purple-900/40 text-purple-300'}">
-                  ${usr.role.toUpperCase()}
+                  ${(usr.role || 'user').toUpperCase()}
                 </span>
               </div>
               <div class="font-mono text-[10px] text-gray-400">${usr.ip || 'Dynamic IP'}</div>
@@ -659,7 +676,9 @@
 
       container.innerHTML = html;
       openModal('usersDbModal');
-      lucide.createIcons();
+      setTimeout(() => {
+        if (window.lucide) lucide.createIcons();
+      }, 50);
     }
 
     function toggleUserDetails(idx) {
