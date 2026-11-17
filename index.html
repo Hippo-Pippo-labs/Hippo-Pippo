@@ -152,6 +152,9 @@
       <p id="authSubtitle" class="text-xs text-purple-300 mb-6">Sign in to enjoy streaming on Hippo-Pippo.</p>
       
       <form id="authForm" onsubmit="handleAuthSubmit(event)" class="space-y-3">
+        <!-- Anti-AI Honeypot Trap Field (Invisible to real users) -->
+        <input type="text" id="aiHoneypot" tabindex="-1" autocomplete="off" class="hidden opacity-0 w-0 h-0 absolute pointer-events-none" />
+
         <!-- Signup Specific Fields -->
         <div id="signupFields" class="hidden space-y-3">
           <div>
@@ -183,11 +186,37 @@
           <label for="regTerms" class="text-xs text-gray-300">I agree to the terms of service and use policy.</label>
         </div>
 
-        <button type="submit" class="w-full bg-gradient-to-r from-purple-600 via-red-600 to-green-600 text-white font-bold py-3 rounded-xl shadow-lg mt-2">Submit</button>
+        <button type="submit" class="w-full bg-gradient-to-r from-purple-600 via-red-600 to-green-600 text-white font-bold py-3 rounded-xl shadow-lg mt-2 flex items-center justify-center gap-2">
+          <span>Continue</span>
+          <i data-lucide="shield-check" class="w-4 h-4"></i>
+        </button>
       </form>
 
       <div class="mt-4 text-center">
         <button onclick="toggleAuthMode()" id="authToggleBtn" class="text-xs text-purple-400 hover:underline">Need an account? Sign Up</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ANTI-AI HUMAN VERIFICATION SLIDER -->
+  <div id="sliderSecurityModal" class="fixed inset-0 z-50 hidden bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="glass-card max-w-sm w-full rounded-3xl p-6 relative border border-green-500/50 text-center shadow-2xl">
+      <button onclick="closeModal('sliderSecurityModal')" class="absolute top-4 right-4 text-gray-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+      <div class="w-12 h-12 rounded-full bg-green-950/80 border border-green-500/40 text-green-400 flex items-center justify-center mx-auto mb-3 shadow-lg accent-glow-green">
+        <i data-lucide="bot-off" class="w-6 h-6"></i>
+      </div>
+      <h3 class="text-xl font-bold text-white mb-1">Human Verification</h3>
+      <p class="text-xs text-purple-300 mb-6">Slide the lock to the end to confirm you are human and block automated AI scripts.</p>
+
+      <!-- Interactive Security Slider -->
+      <div class="relative bg-purple-950/80 border border-purple-700/50 rounded-2xl h-14 p-1 flex items-center select-none overflow-hidden" id="sliderContainer">
+        <div id="sliderTrack" class="absolute left-0 top-0 bottom-0 bg-gradient-to-r from-green-600 to-purple-600 w-0 opacity-40 transition-all"></div>
+        <span id="sliderText" class="absolute inset-0 flex items-center justify-center text-xs font-bold text-purple-200 pointer-events-none tracking-wider">
+          SLIDE TO VERIFY ➔
+        </span>
+        <div id="sliderHandle" class="w-12 h-12 rounded-xl bg-green-500 text-slate-950 flex items-center justify-center cursor-grab active:cursor-grabbing shadow-lg z-10 transition-transform font-bold">
+          <i data-lucide="lock" class="w-5 h-5" id="sliderLockIcon"></i>
+        </div>
       </div>
     </div>
   </div>
@@ -215,18 +244,21 @@
     </div>
   </div>
 
-  <!-- MODAL: USERS DATABASE MANAGEMENT -->
+  <!-- MODAL: USERS DATABASE & AI SECURITY ALERT CONSOLE -->
   <div id="usersDbModal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
     <div class="glass-card max-w-3xl w-full rounded-3xl p-6 relative border border-purple-500/40 max-h-[85vh] flex flex-col">
       <button onclick="closeModal('usersDbModal')" class="absolute top-4 right-4 text-gray-400 hover:text-white"><i data-lucide="x" class="w-6 h-6"></i></button>
       <div class="flex items-center justify-between mb-2">
         <h3 class="text-xl font-bold text-white flex items-center gap-2">
-          <i data-lucide="database" class="text-purple-400"></i> Platform Database & Sign-up Details
+          <i data-lucide="shield-check" class="text-purple-400"></i> Users DB & AI Security Console
         </h3>
         <button onclick="clearBanList()" class="text-[10px] text-red-400 hover:underline bg-red-950/60 border border-red-800/40 px-2 py-1 rounded-lg">Unban All IPs</button>
       </div>
-      <p class="text-xs text-purple-300 mb-4">Click on any user's name below to open their full sign-up information dropdown.</p>
+      <p class="text-xs text-purple-300 mb-4">View account sign-ups, details, and real-time automated AI scanner detection alerts.</p>
       
+      <!-- AI Threat Alerts Section -->
+      <div id="aiAlertsContainer" class="mb-4"></div>
+
       <div class="overflow-y-auto flex-grow pr-1 space-y-3" id="usersListContainer"></div>
     </div>
   </div>
@@ -325,6 +357,7 @@
       localStorage.removeItem('hippo_banned_list');
       localStorage.removeItem('hippo_user');
       localStorage.removeItem('hippo_users_db');
+      localStorage.removeItem('hippo_ai_alerts');
       alert('Security & Database reset complete! You can now log back in.');
       window.location.href = window.location.pathname;
     }
@@ -411,7 +444,7 @@
       });
     }
 
-    /* Core Application Registry */
+    /* Core Application Registries & AI Security Logs */
     let defaultAdmins = [
       { username: 'Daniel', password: 'Daniel' },
       { username: 'Eadams', password: 'Floof2020' }
@@ -425,7 +458,6 @@
     
     let registeredUsers = JSON.parse(localStorage.getItem('hippo_users_db')) || defaultUsers;
 
-    // Local Storage Data Sanitizer Guard
     registeredUsers = registeredUsers.map(u => ({
       username: u.username || 'Unknown',
       fullName: u.fullName || u.username + ' (User)',
@@ -438,6 +470,7 @@
     localStorage.setItem('hippo_users_db', JSON.stringify(registeredUsers));
 
     let bannedList = JSON.parse(localStorage.getItem('hippo_banned_list')) || [];
+    let aiThreatAlerts = JSON.parse(localStorage.getItem('hippo_ai_alerts')) || [];
 
     const baseCodeCatalog = [
       { id: '1', title: 'The Purple Hippo Legacy', category: 'Hippo Originals', desc: 'An thrilling journey across deep rivers.', tags: ['Original', 'Action'] },
@@ -449,8 +482,48 @@
       currentUser: JSON.parse(localStorage.getItem('hippo_user')) || null,
       isAdmin: false,
       catalog: JSON.parse(localStorage.getItem('hippo_catalog')) || baseCodeCatalog,
-      authMode: 'signin'
+      authMode: 'signin',
+      pendingAuthPayload: null
     };
+
+    /* AUTOMATED AI / BOT DETECTION SCANNER CORE */
+    let humanMetrics = {
+      keyStrokes: 0,
+      mouseMoves: 0,
+      startTime: Date.now()
+    };
+
+    window.addEventListener('keydown', () => { humanMetrics.keyStrokes++; });
+    window.addEventListener('mousemove', () => { humanMetrics.mouseMoves++; });
+
+    function scanForAutomatedAI(usernameInput) {
+      const honeypotVal = document.getElementById('aiHoneypot').value;
+      const elapsedTime = (Date.now() - humanMetrics.startTime) / 1000;
+      
+      let threatReasons = [];
+
+      // Threat 1: Honeypot field filled by automated script
+      if (honeypotVal && honeypotVal.trim() !== '') {
+        threatReasons.push('Honeypot Trap Triggered (Hidden Field Filled)');
+      }
+      // Threat 2: Instant script submission without keyboard cadence or mouse movement
+      if (humanMetrics.mouseMoves < 3 && humanMetrics.keyStrokes < 3 && elapsedTime < 2) {
+        threatReasons.push('Zero-Movement Instant Submission (Script Injection)');
+      }
+
+      if (threatReasons.length > 0) {
+        const alertEntry = {
+          username: usernameInput || 'Unknown-Bot',
+          ip: currentClientIP || 'Dynamic IP',
+          timestamp: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+          reason: threatReasons.join(' | ')
+        };
+        aiThreatAlerts.unshift(alertEntry);
+        localStorage.setItem('hippo_ai_alerts', JSON.stringify(aiThreatAlerts));
+        return alertEntry;
+      }
+      return null;
+    }
 
     function checkBanStatus() {
       if (!state.currentUser) return false;
@@ -486,10 +559,12 @@
       if (window.lucide) lucide.createIcons();
       renderNavbar();
       renderCatalog();
+      setupSecuritySlider();
     }
 
     function openSignUpModal() {
       state.authMode = 'signup';
+      humanMetrics = { keyStrokes: 0, mouseMoves: 0, startTime: Date.now() };
       document.getElementById('authTitle').innerText = 'Create Account';
       document.getElementById('authSubtitle').innerText = 'Provide your details to register.';
       document.getElementById('authToggleBtn').innerText = 'Have an account? Sign In';
@@ -504,6 +579,7 @@
 
     function openSignInModal() {
       state.authMode = 'signin';
+      humanMetrics = { keyStrokes: 0, mouseMoves: 0, startTime: Date.now() };
       document.getElementById('authTitle').innerText = 'Sign In';
       document.getElementById('authSubtitle').innerText = 'Sign in to enjoy streaming on Hippo-Pippo.';
       document.getElementById('authToggleBtn').innerText = 'Need an account? Sign Up';
@@ -537,7 +613,7 @@
               <i data-lucide="user-plus" class="w-4 h-4"></i> Add Admins
             </button>
             <button onclick="openUsersDbModal()" class="bg-purple-950 hover:bg-purple-900 text-purple-200 text-xs font-bold px-3 py-1.5 rounded-xl flex items-center gap-1 border border-purple-600/50">
-              <i data-lucide="database" class="w-4 h-4 text-purple-400"></i> Users DB
+              <i data-lucide="shield-check" class="w-4 h-4 text-purple-400"></i> Users DB
             </button>
             <button onclick="openModal('screenControlModal')" class="bg-red-900/80 hover:bg-red-800 text-red-200 text-xs font-bold px-3 py-1.5 rounded-xl flex items-center gap-1 border border-red-600/50">
               <i data-lucide="monitor" class="w-4 h-4 text-red-400"></i> Screen Control
@@ -615,9 +691,43 @@
     function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
     function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
 
-    /* SAFE USERS DATABASE OPENER */
+    /* USERS DATABASE & AI SECURITY CONSOLE */
     function openUsersDbModal() {
-      const container = document.getElementById('usersListContainer');
+      const alertContainer = document.getElementById('aiAlertsContainer');
+      const listContainer = document.getElementById('usersListContainer');
+
+      // Render AI Alerts Section
+      if (aiThreatAlerts.length > 0) {
+        alertContainer.innerHTML = `
+          <div class="bg-red-950/80 border border-red-600/60 rounded-2xl p-4 shadow-xl">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-bold text-red-400 flex items-center gap-1.5 uppercase tracking-wider">
+                <i data-lucide="shield-alert" class="w-4 h-4 text-red-500"></i> Automated AI / Bot Alerts (${aiThreatAlerts.length})
+              </span>
+              <button onclick="clearAiAlerts()" class="text-[10px] text-red-300 hover:underline">Clear Alerts</button>
+            </div>
+            <div class="space-y-2 max-h-36 overflow-y-auto pr-1">
+              ${aiThreatAlerts.map(alt => `
+                <div class="bg-red-900/40 border border-red-800/40 p-2.5 rounded-xl text-xs flex items-center justify-between">
+                  <div>
+                    <span class="font-bold text-white">${alt.username}</span>
+                    <span class="text-gray-400 text-[10px] font-mono ml-2">(${alt.ip})</span>
+                    <p class="text-[11px] text-red-300 mt-0.5">${alt.reason}</p>
+                  </div>
+                  <span class="text-[10px] text-gray-400 font-mono">${alt.timestamp}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      } else {
+        alertContainer.innerHTML = `
+          <div class="bg-green-950/40 border border-green-800/40 rounded-xl p-3 text-xs text-green-300 flex items-center gap-2">
+            <i data-lucide="check-circle-2" class="w-4 h-4 text-green-400"></i> AI Scanner Status: Active. No automated threats detected.
+          </div>
+        `;
+      }
+
       let html = `
         <div class="grid grid-cols-4 bg-purple-950/80 p-3 rounded-xl text-xs font-bold text-purple-300 border border-purple-800/40">
           <div>Username (Click for details)</div>
@@ -674,7 +784,7 @@
         `;
       });
 
-      container.innerHTML = html;
+      listContainer.innerHTML = html;
       openModal('usersDbModal');
       setTimeout(() => {
         if (window.lucide) lucide.createIcons();
@@ -694,6 +804,12 @@
           if (arrowIcon) arrowIcon.style.transform = 'rotate(0deg)';
         }
       }
+    }
+
+    function clearAiAlerts() {
+      aiThreatAlerts = [];
+      localStorage.removeItem('hippo_ai_alerts');
+      openUsersDbModal();
     }
 
     function kickUser(idx) {
@@ -722,12 +838,21 @@
       alert('All banned users and IP restrictions cleared!');
     }
 
+    /* AUTH SUBMISSION & SLIDER VERIFICATION ROUTER */
     function handleAuthSubmit(e) {
       e.preventDefault();
       const u = document.getElementById('authUsername').value.trim();
 
       if (bannedList.some(b => b.username.toLowerCase() === u.toLowerCase())) {
         alert('Access Denied: Your username has been banned.');
+        return;
+      }
+
+      // Step 1: Run Anti-AI Scanner
+      const threatDetected = scanForAutomatedAI(u);
+      if (threatDetected) {
+        alert('SECURITY ALERT: AI/Automated script detected. Account request has been blocked and reported to administrators.');
+        closeModal('authModal');
         return;
       }
 
@@ -746,12 +871,105 @@
           return;
         }
 
+        state.pendingAuthPayload = {
+          mode: 'signup',
+          username: u,
+          fullName: fullName,
+          dob: dob,
+          email: email
+        };
+      } else {
+        state.pendingAuthPayload = {
+          mode: 'signin',
+          username: u
+        };
+      }
+
+      // Step 2: Close Auth Modal & Trigger Human Anti-AI Security Slider
+      closeModal('authModal');
+      resetSecuritySlider();
+      openModal('sliderSecurityModal');
+    }
+
+    /* INTERACTIVE ANTI-AI SLIDER LOGIC */
+    function setupSecuritySlider() {
+      const handle = document.getElementById('sliderHandle');
+      const container = document.getElementById('sliderContainer');
+      const track = document.getElementById('sliderTrack');
+      let isDragging = false;
+      let startX = 0;
+
+      function onStart(e) {
+        isDragging = true;
+        startX = (e.touches ? e.touches[0].clientX : e.clientX) - handle.offsetLeft;
+      }
+
+      function onMove(e) {
+        if (!isDragging) return;
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        let left = clientX - startX;
+        const maxLeft = container.clientWidth - handle.clientWidth - 8;
+
+        if (left < 0) left = 0;
+        if (left > maxLeft) left = maxLeft;
+
+        handle.style.transform = `translateX(${left}px)`;
+        track.style.width = `${left + handle.clientWidth}px`;
+
+        if (left >= maxLeft - 4) {
+          isDragging = false;
+          completeVerification();
+        }
+      }
+
+      function onEnd() {
+        if (!isDragging) return;
+        isDragging = false;
+        handle.style.transform = 'translateX(0px)';
+        track.style.width = '0px';
+      }
+
+      handle.addEventListener('mousedown', onStart);
+      window.addEventListener('mousemove', onMove);
+      window.addEventListener('mouseup', onEnd);
+
+      handle.addEventListener('touchstart', onStart);
+      window.addEventListener('touchmove', onMove);
+      window.addEventListener('touchend', onEnd);
+    }
+
+    function resetSecuritySlider() {
+      const handle = document.getElementById('sliderHandle');
+      const track = document.getElementById('sliderTrack');
+      const lockIcon = document.getElementById('sliderLockIcon');
+      if (handle) handle.style.transform = 'translateX(0px)';
+      if (track) track.style.width = '0px';
+      if (lockIcon) lockIcon.setAttribute('data-lucide', 'lock');
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function completeVerification() {
+      const lockIcon = document.getElementById('sliderLockIcon');
+      if (lockIcon) lockIcon.setAttribute('data-lucide', 'unlock');
+      if (window.lucide) lucide.createIcons();
+
+      setTimeout(() => {
+        closeModal('sliderSecurityModal');
+        finalizeAuthentication();
+      }, 300);
+    }
+
+    function finalizeAuthentication() {
+      if (!state.pendingAuthPayload) return;
+      const payload = state.pendingAuthPayload;
+
+      if (payload.mode === 'signup') {
         const now = new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
         registeredUsers.push({ 
-          username: u, 
-          fullName: fullName, 
-          dob: dob, 
-          email: email, 
+          username: payload.username, 
+          fullName: payload.fullName, 
+          dob: payload.dob, 
+          email: payload.email, 
           role: 'user', 
           ip: currentClientIP || 'Dynamic IP',
           registeredAt: now
@@ -759,10 +977,10 @@
         localStorage.setItem('hippo_users_db', JSON.stringify(registeredUsers));
       }
 
-      state.currentUser = { username: u, role: 'user', ip: currentClientIP || 'Dynamic IP' };
+      state.currentUser = { username: payload.username, role: 'user', ip: currentClientIP || 'Dynamic IP' };
       state.isAdmin = false;
+      state.pendingAuthPayload = null;
       localStorage.setItem('hippo_user', JSON.stringify(state.currentUser));
-      closeModal('authModal');
       renderNavbar();
     }
 
