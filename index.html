@@ -31,7 +31,7 @@
         }
     </script>
 
-    <!-- FontAwesome & Phosphor Icons -->
+    <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- Inter Font -->
@@ -100,8 +100,9 @@
                 <button id="nav-catalog-btn" onclick="switchTab('catalog')" class="px-4 py-1.5 rounded-lg text-sm font-medium transition-all bg-brand-500 text-white shadow-lg">
                     <i class="fa-solid fa-film mr-2"></i> Catalog Viewer
                 </button>
-                <button id="nav-admin-btn" onclick="switchTab('admin')" class="px-4 py-1.5 rounded-lg text-sm font-medium text-neutral-400 hover:text-white hover:bg-neutral-800 transition-all">
-                    <i class="fa-solid fa-cloud-arrow-up mr-2"></i> Creator & Sync Admin
+                <!-- Admin Only Navigation Button: Strictly hidden unless logged in as Admin Eadams -->
+                <button id="nav-admin-btn" onclick="switchTab('admin')" class="hidden px-4 py-1.5 rounded-lg text-sm font-medium text-neutral-400 hover:text-white hover:bg-neutral-800 transition-all">
+                    <i class="fa-solid fa-shield-halved mr-2 text-amber-400"></i> Creator & Sync Admin
                 </button>
             </nav>
         </div>
@@ -188,8 +189,9 @@
         <button id="mobile-nav-catalog" onclick="switchTab('catalog')" class="flex-1 py-2 rounded-lg text-xs font-semibold bg-brand-500 text-white text-center">
             <i class="fa-solid fa-film mr-1"></i> Catalog
         </button>
-        <button id="mobile-nav-admin" onclick="switchTab('admin')" class="flex-1 py-2 rounded-lg text-xs font-semibold text-neutral-400 bg-neutral-800 text-center">
-            <i class="fa-solid fa-cloud-arrow-up mr-1"></i> Sync Admin
+        <!-- Admin Only Mobile Navigation: Hidden unless logged in as Admin Eadams -->
+        <button id="mobile-nav-admin" onclick="switchTab('admin')" class="hidden flex-1 py-2 rounded-lg text-xs font-semibold text-neutral-400 bg-neutral-800 text-center">
+            <i class="fa-solid fa-shield-halved mr-1 text-amber-400"></i> Sync Admin
         </button>
     </div>
 
@@ -213,13 +215,9 @@
                         Upload media files in the Creator Studio to automatically stream and sync video titles instantly across all open browser instances & devices.
                     </p>
                     <div class="pt-2 flex flex-wrap gap-3">
-                        <button onclick="switchTab('admin')" class="px-5 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-semibold text-sm shadow-lg shadow-brand-500/30 transition flex items-center space-x-2">
+                        <button onclick="handleHeroUploadClick()" class="px-5 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-semibold text-sm shadow-lg shadow-brand-500/30 transition flex items-center space-x-2">
                             <i class="fa-solid fa-plus-circle"></i>
                             <span>Upload & Sync New Video</span>
-                        </button>
-                        <button onclick="triggerSampleSeed()" class="px-5 py-2.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-neutral-700 font-semibold text-sm transition flex items-center space-x-2">
-                            <i class="fa-solid fa-wand-magic-sparkles"></i>
-                            <span>Seed Sample Library</span>
                         </button>
                     </div>
                 </div>
@@ -237,12 +235,13 @@
                 <div class="flex flex-wrap sm:flex-nowrap items-center gap-3 w-full sm:w-auto">
                     <!-- Genre Filter -->
                     <select id="genre-filter" onchange="renderCatalog()" class="bg-neutral-900 text-xs font-medium text-neutral-300 border border-neutral-800 rounded-lg px-3 py-2 outline-none focus:border-brand-500 transition">
-                        <option value="ALL font-normal">All Genres</option>
+                        <option value="ALL">All Genres</option>
                         <option value="Action">Action</option>
                         <option value="Sci-Fi">Sci-Fi</option>
                         <option value="Documentary">Documentary</option>
                         <option value="Animation">Animation</option>
                         <option value="Drama">Drama</option>
+                        <option value="Comedy">Comedy</option>
                         <option value="Other">Other</option>
                     </select>
 
@@ -265,30 +264,29 @@
                     <i class="fa-solid fa-film"></i>
                 </div>
                 <h3 class="text-lg font-bold text-neutral-300">No synchronized films yet</h3>
-                <p class="text-xs text-neutral-500 max-w-md mx-auto mt-1 mb-6">Upload an MP4/WebM video in the Creator Studio or seed the demo catalog to test multi-tab live sync.</p>
-                <button onclick="switchTab('admin')" class="px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-lg text-xs font-semibold transition">
-                    Open Creator Studio
-                </button>
+                <p class="text-xs text-neutral-500 max-w-md mx-auto mt-1 mb-6">Log in as Verified Admin (Eadams) to upload MP4/WebM videos or YouTube streams.</p>
             </div>
         </section>
 
         <!-- ========================================================================= -->
-        <!-- VIEW 2: ADMIN & CREATOR SYNC HUB -->
+        <!-- VIEW 2: ADMIN & CREATOR SYNC HUB (RESTRICTED TO EADAMS ADMIN) -->
         <!-- ========================================================================= -->
         <section id="view-admin" class="hidden space-y-8">
             <!-- Header Title -->
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-neutral-800">
                 <div>
                     <h1 class="text-2xl font-black text-white tracking-tight flex items-center gap-3">
-                        <span>Creator Media & Broadcast Manager</span>
-                        <span class="text-xs font-normal text-emerald-400 bg-emerald-950/60 border border-emerald-800/40 px-2 py-0.5 rounded">Cross-Device Sync</span>
+                        <i class="fa-solid fa-shield-halved text-amber-400"></i>
+                        <span>Creator Media & Admin Control Center</span>
+                        <span class="text-xs font-normal text-amber-400 bg-amber-950/60 border border-amber-800/40 px-2 py-0.5 rounded font-mono">Verified Admin Only</span>
                     </h1>
-                    <p class="text-xs text-neutral-400 mt-1">Upload files, add YouTube URLs, and dispatch live broadcast notifications across all open devices and browsers.</p>
+                    <p class="text-xs text-neutral-400 mt-1">Upload films, manage user databases, and dispatch live broadcast notifications across all open devices.</p>
                 </div>
 
-                <div class="flex items-center space-x-2">
+                <!-- Admin Action Toolbar (Visible ONLY to Eadams) -->
+                <div id="admin-actions-toolbar" class="flex items-center space-x-2">
                     <button onclick="triggerSampleSeed()" class="px-3.5 py-2 rounded-lg bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 text-xs font-semibold text-neutral-200 transition flex items-center gap-2">
-                        <i class="fa-solid fa-database text-brand-400"></i> Seed Demo Movies
+                        <i class="fa-solid fa-wand-magic-sparkles text-amber-400"></i> Seed Demo Movies
                     </button>
                     <button onclick="clearAllFilms()" class="px-3.5 py-2 rounded-lg bg-red-950/50 hover:bg-red-900/60 border border-red-800/40 text-xs font-semibold text-red-300 transition flex items-center gap-2">
                         <i class="fa-solid fa-trash-can"></i> Clear Catalog
@@ -403,6 +401,38 @@
                     </form>
                 </div>
             </div>
+
+            <!-- USERS DATABASE & ADMIN MANAGEMENT PANEL (Visible strictly to Admin Eadams) -->
+            <div id="admin-users-panel" class="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 shadow-xl space-y-4">
+                <div class="flex items-center justify-between border-b border-neutral-800 pb-3">
+                    <div>
+                        <h3 class="text-base font-bold text-neutral-200 flex items-center gap-2">
+                            <i class="fa-solid fa-users-gear text-amber-400"></i> User Accounts & Admin Privileges Database
+                        </h3>
+                        <p class="text-xs text-neutral-400">Manage registered accounts and elevate users to verified Admin status.</p>
+                    </div>
+                    <span id="user-count-badge" class="px-3 py-1 rounded-full bg-neutral-800 border border-neutral-700 text-xs font-semibold text-neutral-300">
+                        1 Accounts
+                    </span>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-neutral-950 text-neutral-400 uppercase font-mono border-b border-neutral-800">
+                            <tr>
+                                <th class="p-3">User / Profile</th>
+                                <th class="p-3">Email Address</th>
+                                <th class="p-3">User ID</th>
+                                <th class="p-3">Role Status</th>
+                                <th class="p-3 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="users-table-body" class="divide-y divide-neutral-800 font-mono text-neutral-300">
+                            <!-- Populated dynamically via renderAdminTable() -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </section>
     </main>
 
@@ -423,13 +453,9 @@
 
             <!-- Auth Form -->
             <form id="auth-form" onsubmit="handleAuthSubmit(event)" class="space-y-4">
-                <div id="username-field-wrapper" class="hidden">
-                    <label class="block text-xs font-medium text-neutral-400 mb-1">Username *</label>
-                    <input type="text" id="auth-username" placeholder="e.g. Eadams" class="w-full bg-neutral-950 text-xs text-neutral-200 px-4 py-3 rounded-xl border border-neutral-800 focus:border-brand-500 outline-none">
-                </div>
                 <div>
-                    <label id="auth-identifier-label" class="block text-xs font-medium text-neutral-400 mb-1">Email Address or Username</label>
-                    <input type="text" id="auth-email" required placeholder="user@example.com or Eadams" class="w-full bg-neutral-950 text-xs text-neutral-200 px-4 py-3 rounded-xl border border-neutral-800 focus:border-brand-500 outline-none">
+                    <label id="auth-identifier-label" class="block text-xs font-medium text-neutral-400 mb-1">Email Address (or Admin Username Eadams)</label>
+                    <input type="text" id="auth-email" required placeholder="name@example.com or Eadams" class="w-full bg-neutral-950 text-xs text-neutral-200 px-4 py-3 rounded-xl border border-neutral-800 focus:border-brand-500 outline-none">
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-neutral-400 mb-1">Password</label>
@@ -522,6 +548,7 @@
         
         let filmCatalog = [];
         let broadcastNotifications = [];
+        let userAccountsList = [];
         let unreadNotifCount = 0;
         let activeProfile = 'Adult';
         let isAuthSignUpMode = false;
@@ -625,23 +652,43 @@
                 catalogView.classList.remove('hidden');
                 adminView.classList.add('hidden');
                 
-                catalogBtn.className = "px-4 py-1.5 rounded-lg text-sm font-medium transition-all bg-brand-500 text-white shadow-lg";
-                adminBtn.className = "px-4 py-1.5 rounded-lg text-sm font-medium text-neutral-400 hover:text-white hover:bg-neutral-800 transition-all";
+                if (catalogBtn) catalogBtn.className = "px-4 py-1.5 rounded-lg text-sm font-medium transition-all bg-brand-500 text-white shadow-lg";
+                if (adminBtn) adminBtn.className = "px-4 py-1.5 rounded-lg text-sm font-medium text-neutral-400 hover:text-white hover:bg-neutral-800 transition-all";
                 
-                mCatalogBtn.className = "flex-1 py-2 rounded-lg text-xs font-semibold bg-brand-500 text-white text-center";
-                mAdminBtn.className = "flex-1 py-2 rounded-lg text-xs font-semibold text-neutral-400 bg-neutral-800 text-center";
+                if (mCatalogBtn) mCatalogBtn.className = "flex-1 py-2 rounded-lg text-xs font-semibold bg-brand-500 text-white text-center";
+                if (mAdminBtn) mAdminBtn.className = "flex-1 py-2 rounded-lg text-xs font-semibold text-neutral-400 bg-neutral-800 text-center";
             } else {
+                if (!currentUser || !currentUser.isAdmin) {
+                    showToast("Creator Admin is strictly restricted to Verified Admin Eadams", "error");
+                    openAuthModal();
+                    return;
+                }
+
                 catalogView.classList.add('hidden');
                 adminView.classList.remove('hidden');
 
-                adminBtn.className = "px-4 py-1.5 rounded-lg text-sm font-medium transition-all bg-brand-500 text-white shadow-lg";
-                catalogBtn.className = "px-4 py-1.5 rounded-lg text-sm font-medium text-neutral-400 hover:text-white hover:bg-neutral-800 transition-all";
+                if (adminBtn) adminBtn.className = "px-4 py-1.5 rounded-lg text-sm font-medium transition-all bg-brand-500 text-white shadow-lg";
+                if (catalogBtn) catalogBtn.className = "px-4 py-1.5 rounded-lg text-sm font-medium text-neutral-400 hover:text-white hover:bg-neutral-800 transition-all";
 
-                mAdminBtn.className = "flex-1 py-2 rounded-lg text-xs font-semibold bg-brand-500 text-white text-center";
-                mCatalogBtn.className = "flex-1 py-2 rounded-lg text-xs font-semibold text-neutral-400 bg-neutral-800 text-center";
+                if (mAdminBtn) mAdminBtn.className = "flex-1 py-2 rounded-lg text-xs font-semibold bg-brand-500 text-white text-center";
+                if (mCatalogBtn) mCatalogBtn.className = "flex-1 py-2 rounded-lg text-xs font-semibold text-neutral-400 bg-neutral-800 text-center";
+                
+                renderAdminTable();
             }
         }
         window.switchTab = switchTab;
+
+        function handleHeroUploadClick() {
+            if (currentUser && currentUser.isAdmin) {
+                switchTab('admin');
+            } else if (!currentUser) {
+                openAuthModal();
+                showToast("Please sign in as Verified Admin Eadams to upload films", "info");
+            } else {
+                showToast("Film upload is strictly restricted to Verified Admin Eadams", "error");
+            }
+        }
+        window.handleHeroUploadClick = handleHeroUploadClick;
 
         function updateCatalogViews() {
             renderCatalog();
@@ -850,23 +897,20 @@
             const toggleBtn = document.getElementById('auth-toggle-mode-btn');
             const title = document.getElementById('auth-modal-title');
             const subtitle = document.getElementById('auth-modal-subtitle');
-            const usernameWrapper = document.getElementById('username-field-wrapper');
             const identifierLabel = document.getElementById('auth-identifier-label');
 
             if (isAuthSignUpMode) {
                 if (submitBtn) submitBtn.textContent = "Create Account";
                 if (toggleBtn) toggleBtn.textContent = "Already have an account? Sign In";
                 if (title) title.textContent = "Create Hippo Pippo Account";
-                if (subtitle) subtitle.textContent = "Register to sync catalog additions & preferences across all browsers.";
-                if (usernameWrapper) usernameWrapper.classList.remove('hidden');
+                if (subtitle) subtitle.textContent = "Register with your email to stream films & sync progress.";
                 if (identifierLabel) identifierLabel.textContent = "Email Address *";
             } else {
                 if (submitBtn) submitBtn.textContent = "Sign In";
                 if (toggleBtn) toggleBtn.textContent = "Need an account? Sign Up";
                 if (title) title.textContent = "Hippo Pippo Account Sync";
                 if (subtitle) subtitle.textContent = "Sign in to automatically sync your watch progress across all devices.";
-                if (usernameWrapper) usernameWrapper.classList.add('hidden');
-                if (identifierLabel) identifierLabel.textContent = "Email Address or Username";
+                if (identifierLabel) identifierLabel.textContent = "Email Address or Admin Username";
             }
         }
         window.toggleAuthMode = toggleAuthMode;
@@ -874,11 +918,9 @@
         async function handleAuthSubmit(event) {
             event.preventDefault();
             const identifierInput = document.getElementById('auth-email');
-            const usernameInput = document.getElementById('auth-username');
             const passwordInput = document.getElementById('auth-password');
 
             const identifier = identifierInput ? identifierInput.value.trim() : '';
-            const usernameVal = usernameInput ? usernameInput.value.trim() : '';
             const password = passwordInput ? passwordInput.value : '';
 
             if (!identifier || !password) {
@@ -886,21 +928,28 @@
                 return;
             }
 
-            // Check if logging in as Verified Admin (Eadams / Floof2020)
-            if (!isAuthSignUpMode && (identifier.toLowerCase() === VERIFIED_ADMIN.username.toLowerCase() || identifier.toLowerCase() === VERIFIED_ADMIN.email.toLowerCase())) {
+            // Sole admin login check: username "Eadams" (or admin email) + password "Floof2020"
+            const isAdminAttempt = identifier.toLowerCase() === VERIFIED_ADMIN.username.toLowerCase() || identifier.toLowerCase() === VERIFIED_ADMIN.email.toLowerCase();
+
+            if (isAdminAttempt) {
+                if (isAuthSignUpMode) {
+                    showToast("Admin account already exists. Switch to Sign In.", "error");
+                    return;
+                }
                 if (password === VERIFIED_ADMIN.password) {
                     currentUser = {
                         username: VERIFIED_ADMIN.username,
                         email: VERIFIED_ADMIN.email,
                         uid: 'admin-eadams',
-                        role: VERIFIED_ADMIN.role,
+                        role: 'Verified Admin',
+                        isVerified: true,
                         isAdmin: true
                     };
                     localStorage.setItem('hippo_auth_user', JSON.stringify(currentUser));
                     updateUserUI();
                     closeAuthModal();
-                    showAccountSyncedModal(`${VERIFIED_ADMIN.username} (${VERIFIED_ADMIN.role})`);
-                    showToast("Logged in as Verified Admin!", "success");
+                    showAccountSyncedModal(`${VERIFIED_ADMIN.username} (Verified Admin)`);
+                    showToast("Logged in as Verified Admin Eadams!", "success");
                     return;
                 } else {
                     showToast("Incorrect password for Admin account Eadams", "error");
@@ -908,45 +957,43 @@
                 }
             }
 
-            if (isAuthSignUpMode && !usernameVal) {
-                showToast("Please enter a username for registration", "error");
+            // Standard accounts must use a valid email address (no random numbers or arbitrary usernames)
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(identifier)) {
+                showToast("Enter a valid email address (only 'Eadams' can sign in by username)", "error");
                 return;
             }
 
-            if (!auth) {
-                // Persistent authentication state fallback
-                const userEmail = identifier.includes('@') ? identifier : `${identifier}@hippopippo.com`;
-                const displayUser = isAuthSignUpMode ? usernameVal : (identifier.includes('@') ? identifier.split('@')[0] : identifier);
-                
-                currentUser = { 
-                    username: displayUser,
-                    email: userEmail, 
-                    uid: 'usr-' + Date.now(), 
-                    role: 'Standard User',
-                    isAdmin: false 
-                };
-                localStorage.setItem('hippo_auth_user', JSON.stringify(currentUser));
-                updateUserUI();
-                closeAuthModal();
-                showAccountSyncedModal(`${currentUser.username} (${currentUser.email})`);
-                return;
-            }
+            const userEmail = identifier.toLowerCase();
+            const displayUser = userEmail.split('@')[0];
 
-            try {
-                if (isAuthSignUpMode) {
-                    const res = await window.FirebaseSDK.createUserWithEmailAndPassword(auth, identifier, password);
-                    currentUser = { username: usernameVal, email: res.user.email, uid: res.user.uid, role: 'Standard User', isAdmin: false };
-                } else {
-                    const res = await window.FirebaseSDK.signInWithEmailAndPassword(auth, identifier, password);
-                    currentUser = { username: identifier.split('@')[0], email: res.user.email, uid: res.user.uid, role: 'Standard User', isAdmin: false };
-                }
-                localStorage.setItem('hippo_auth_user', JSON.stringify(currentUser));
-                updateUserUI();
-                closeAuthModal();
-                showAccountSyncedModal(currentUser.username);
-            } catch (err) {
-                showToast(err.message, "error");
+            currentUser = {
+                username: displayUser,
+                email: userEmail,
+                uid: 'usr-' + btoa(userEmail).replace(/[^a-zA-Z0-9]/g, '').slice(0, 12),
+                role: 'Standard User (Unverified)',
+                isVerified: false,
+                isAdmin: false
+            };
+
+            // Register in Users Database if not present
+            const existingIdx = userAccountsList.findIndex(u => u.email.toLowerCase() === currentUser.email.toLowerCase());
+            if (existingIdx === -1) {
+                userAccountsList.push(currentUser);
+            } else {
+                // Preserve existing role if previously set, defaulting to non-admin
+                currentUser.isAdmin = Boolean(userAccountsList[existingIdx].isAdmin);
+                currentUser.isVerified = Boolean(userAccountsList[existingIdx].isVerified && currentUser.isAdmin);
+                currentUser.role = currentUser.isAdmin ? 'Verified Admin' : 'Standard User (Unverified)';
+                userAccountsList[existingIdx] = currentUser;
             }
+            localStorage.setItem('hippo_users_db', JSON.stringify(userAccountsList));
+
+            localStorage.setItem('hippo_auth_user', JSON.stringify(currentUser));
+            updateUserUI();
+            closeAuthModal();
+            showAccountSyncedModal(`${currentUser.email} — Standard User`);
+            showToast("Signed in as Standard User", "info");
         }
         window.handleAuthSubmit = handleAuthSubmit;
 
@@ -980,6 +1027,8 @@
             const roleBadge = document.getElementById('menu-user-role-badge');
             const avatarBadge = document.getElementById('user-avatar-badge');
             const authBtnLabel = document.getElementById('auth-btn-label');
+            const navAdminBtn = document.getElementById('nav-admin-btn');
+            const mobileNavAdminBtn = document.getElementById('mobile-nav-admin');
 
             if (currentUser) {
                 const displayName = currentUser.username || currentUser.email.split('@')[0];
@@ -999,12 +1048,22 @@
                         roleBadge.textContent = "Verified Admin ⭐";
                         roleBadge.className = "mt-1 inline-block text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40";
                     } else {
-                        roleBadge.textContent = "Standard User";
+                        roleBadge.textContent = "Standard User • Unverified";
                         roleBadge.className = "mt-1 inline-block text-[10px] font-bold px-2 py-0.5 rounded bg-neutral-800 text-neutral-400 border border-neutral-700";
                     }
                 }
 
                 if (authBtnLabel) authBtnLabel.textContent = "Switch Account / Sign Out";
+
+                // Reveal Admin tabs strictly to Verified Admin Eadams
+                if (currentUser.isAdmin) {
+                    if (navAdminBtn) navAdminBtn.classList.remove('hidden');
+                    if (mobileNavAdminBtn) mobileNavAdminBtn.classList.remove('hidden');
+                } else {
+                    if (navAdminBtn) navAdminBtn.classList.add('hidden');
+                    if (mobileNavAdminBtn) mobileNavAdminBtn.classList.add('hidden');
+                    switchTab('catalog');
+                }
             } else {
                 if (nameDisplay) nameDisplay.textContent = "Not Signed In";
                 if (menuEmail) menuEmail.textContent = "No Active Account";
@@ -1014,6 +1073,10 @@
                 }
                 if (avatarBadge) avatarBadge.textContent = "?";
                 if (authBtnLabel) authBtnLabel.textContent = "Sign In / Create Account";
+                
+                if (navAdminBtn) navAdminBtn.classList.add('hidden');
+                if (mobileNavAdminBtn) mobileNavAdminBtn.classList.add('hidden');
+                switchTab('catalog');
             }
         }
         window.updateUserUI = updateUserUI;
@@ -1086,6 +1149,11 @@
         async function publishNewFilm(event) {
             event.preventDefault();
 
+            if (!currentUser || !currentUser.isAdmin) {
+                showToast("Film upload is strictly restricted to Verified Admin Eadams", "error");
+                return;
+            }
+
             const title = document.getElementById('meta-title').value.trim();
             const genre = document.getElementById('meta-genre').value;
             const duration = document.getElementById('meta-duration').value || 'Unknown';
@@ -1118,17 +1186,7 @@
                 newFilm.sourceType = 'Sample Stream';
             }
 
-            if (db && isFirebaseActive) {
-                try {
-                    await window.FirebaseSDK.addDoc(window.FirebaseSDK.collection(db, "catalogs"), newFilm);
-                    showToast("Film published and synced to cloud!", "success");
-                } catch (err) {
-                    showToast("Local sync fallback: " + err.message, "info");
-                    saveLocalCatalog(newFilm);
-                }
-            } else {
-                saveLocalCatalog(newFilm);
-            }
+            saveLocalCatalog(newFilm);
 
             document.getElementById('upload-form').reset();
             document.getElementById('file-details-badge').classList.add('hidden');
@@ -1156,6 +1214,12 @@
            ========================================================================= */
         async function sendGlobalBroadcast(event) {
             event.preventDefault();
+
+            if (!currentUser || !currentUser.isAdmin) {
+                showToast("Global notifications dispatch restricted to Verified Admin Eadams", "error");
+                return;
+            }
+
             const input = document.getElementById('broadcast-message-input');
             const message = input ? input.value.trim() : '';
             if (!message) return;
@@ -1170,15 +1234,7 @@
                 broadcastChannel.postMessage({ type: 'NEW_NOTIFICATION', data: notif });
             }
 
-            if (db && isFirebaseActive) {
-                try {
-                    await window.FirebaseSDK.addDoc(window.FirebaseSDK.collection(db, "notifications"), notif);
-                } catch (err) {
-                    addNotificationToState(notif, true);
-                }
-            } else {
-                addNotificationToState(notif, true);
-            }
+            addNotificationToState(notif, true);
 
             if (input) input.value = '';
             showToast("Broadcast message dispatched globally!", "success");
@@ -1253,9 +1309,13 @@
         window.showToast = showToast;
 
         /* =========================================================================
-           8. DEMO SEED & CATALOG MANAGEMENT
+           8. DEMO SEED, USER DB & CATALOG MANAGEMENT
            ========================================================================= */
         function triggerSampleSeed() {
+            if (!currentUser || !currentUser.isAdmin) {
+                showToast("Demo seeding restricted to Verified Admin Eadams", "error");
+                return;
+            }
             filmCatalog = [...SAMPLE_MOVIES];
             localStorage.setItem('hippo_catalog', JSON.stringify(filmCatalog));
             if (broadcastChannel) {
@@ -1267,6 +1327,10 @@
         window.triggerSampleSeed = triggerSampleSeed;
 
         function clearAllFilms() {
+            if (!currentUser || !currentUser.isAdmin) {
+                showToast("Catalog clearing restricted to Verified Admin Eadams", "error");
+                return;
+            }
             filmCatalog = [];
             localStorage.removeItem('hippo_catalog');
             if (broadcastChannel) {
@@ -1278,14 +1342,64 @@
         window.clearAllFilms = clearAllFilms;
 
         function renderAdminTable() {
-            // Admin management table view renderer
+            const tableBody = document.getElementById('users-table-body');
+            const userCountBadge = document.getElementById('user-count-badge');
+            if (!tableBody) return;
+
+            const allUsers = [
+                { username: VERIFIED_ADMIN.username, email: VERIFIED_ADMIN.email, uid: 'admin-eadams', role: 'Verified Admin ⭐', isAdmin: true },
+                ...userAccountsList
+            ];
+
+            if (userCountBadge) userCountBadge.textContent = `${allUsers.length} Accounts`;
+
+            tableBody.innerHTML = allUsers.map(user => `
+                <tr class="hover:bg-neutral-900/60 transition">
+                    <td class="p-3 font-semibold text-white flex items-center gap-2">
+                        <i class="fa-solid ${user.isAdmin ? 'fa-user-shield text-amber-400' : 'fa-user text-neutral-400'}"></i>
+                        <span>${user.username}</span>
+                    </td>
+                    <td class="p-3 text-neutral-400">${user.email}</td>
+                    <td class="p-3 text-neutral-500 text-[11px]">${user.uid}</td>
+                    <td class="p-3">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold ${user.isAdmin ? 'bg-amber-950 text-amber-300 border border-amber-700/50' : 'bg-neutral-800 text-neutral-400'}">
+                            ${user.isAdmin ? 'Verified Admin ⭐' : 'Standard User'}
+                        </span>
+                    </td>
+                    <td class="p-3 text-right">
+                        ${user.uid === 'admin-eadams' ? '<span class="text-[10px] text-neutral-500 italic">Primary Admin</span>' : `
+                            <button onclick="toggleUserAdminRole('${user.uid}')" class="px-2 py-1 rounded bg-neutral-800 hover:bg-neutral-700 text-[10px] text-neutral-200">
+                                ${user.isAdmin ? 'Revoke Admin' : 'Make Admin'}
+                            </button>
+                        `}
+                    </td>
+                </tr>
+            `).join('');
         }
         window.renderAdminTable = renderAdminTable;
+
+        function toggleUserAdminRole(uid) {
+            const user = userAccountsList.find(u => u.uid === uid);
+            if (user) {
+                user.isAdmin = !user.isAdmin;
+                user.role = user.isAdmin ? 'Verified Admin' : 'Standard User';
+                localStorage.setItem('hippo_users_db', JSON.stringify(userAccountsList));
+                renderAdminTable();
+                showToast(`Updated admin role for ${user.username}`, "info");
+            }
+        }
+        window.toggleUserAdminRole = toggleUserAdminRole;
 
         /* =========================================================================
            9. APP INITIALIZATION & FIREBASE LISTENERS
            ========================================================================= */
         window.addEventListener('DOMContentLoaded', () => {
+            // Restore persistent user accounts database
+            const savedUsers = localStorage.getItem('hippo_users_db');
+            if (savedUsers) {
+                try { userAccountsList = JSON.parse(savedUsers); } catch(e) {}
+            }
+
             // Restore persistent auth user if signed in locally
             const savedUser = localStorage.getItem('hippo_auth_user');
             if (savedUser) {
