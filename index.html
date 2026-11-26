@@ -42,12 +42,12 @@
     <!-- Firebase SDK Modular Import -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, addDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         window.FirebaseSDK = {
             initializeApp,
-            getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged,
+            getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut,
             getFirestore, doc, setDoc, getDoc, onSnapshot, collection, addDoc, updateDoc, deleteDoc
         };
     </script>
@@ -106,25 +106,78 @@
             </nav>
         </div>
 
-        <!-- Sync Indicator & Profile -->
+        <!-- Sync Indicator, Notification Center & Account Controls -->
         <div class="flex items-center space-x-4">
             <!-- Live Real-Time Connection Indicator -->
-            <div id="sync-badge" class="flex items-center space-x-2 px-3 py-1.5 rounded-full bg-emerald-950/80 border border-emerald-600/40 text-emerald-400 text-xs font-semibold shadow-inner">
+            <div id="sync-badge" class="hidden sm:flex items-center space-x-2 px-3 py-1.5 rounded-full bg-emerald-950/80 border border-emerald-600/40 text-emerald-400 text-xs font-semibold shadow-inner">
                 <span class="relative flex h-2.5 w-2.5">
                   <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                   <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
                 </span>
-                <span id="sync-status-text">Cloud Sync Live</span>
+                <span id="sync-status-text">Global Sync Active</span>
             </div>
 
-            <!-- Active User Session Details -->
-            <div class="flex items-center space-x-3 pl-3 border-l border-neutral-800">
-                <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-brand-600 to-amber-500 flex items-center justify-center font-bold text-xs text-white shadow">
-                    HP
+            <!-- Global Live Notification Broadcast Bell -->
+            <div class="relative">
+                <button id="notification-bell-btn" onclick="toggleNotificationDropdown()" class="relative p-2.5 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-300 hover:text-white hover:bg-neutral-800 transition">
+                    <i class="fa-solid fa-bell text-base"></i>
+                    <span id="unread-notif-badge" class="hidden absolute -top-1 -right-1 w-5 h-5 bg-brand-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center animate-bounce shadow">0</span>
+                </button>
+
+                <!-- Notifications Dropdown Box -->
+                <div id="notification-dropdown" class="hidden absolute right-0 mt-3 w-80 sm:w-96 bg-neutral-900 border border-neutral-800 rounded-2xl shadow-2xl z-50 p-4 space-y-3">
+                    <div class="flex items-center justify-between border-b border-neutral-800 pb-2">
+                        <h4 class="text-xs font-bold uppercase tracking-wider text-neutral-300 flex items-center gap-2">
+                            <i class="fa-solid fa-tower-cell text-brand-500"></i> Global Live Announcements
+                        </h4>
+                        <span id="notif-count-text" class="text-[10px] text-neutral-500">0 messages</span>
+                    </div>
+                    <div id="notification-list" class="max-h-64 overflow-y-auto space-y-2 pr-1">
+                        <div class="text-center py-6 text-xs text-neutral-500">No broadcast announcements yet.</div>
+                    </div>
                 </div>
-                <div class="hidden lg:block text-left">
-                    <div class="text-xs font-semibold text-neutral-200">Admin Creator</div>
-                    <div class="text-[10px] text-neutral-400" id="user-id-display">Connecting...</div>
+            </div>
+
+            <!-- Account Auth & Profile Dropdown -->
+            <div class="relative">
+                <button id="account-dropdown-btn" onclick="toggleAccountMenu()" class="flex items-center space-x-2.5 bg-neutral-900 border border-neutral-800 hover:border-neutral-700 px-3 py-1.5 rounded-xl transition">
+                    <div id="user-avatar-badge" class="w-7 h-7 rounded-lg bg-gradient-to-tr from-brand-600 to-amber-500 flex items-center justify-center font-bold text-xs text-white shadow">
+                        ?
+                    </div>
+                    <div class="hidden lg:block text-left">
+                        <div id="user-name-display" class="text-xs font-semibold text-neutral-200">Not Signed In</div>
+                        <div id="user-profile-type" class="text-[10px] text-neutral-400">Account Required</div>
+                    </div>
+                    <i class="fa-solid fa-chevron-down text-neutral-500 text-[10px] ml-1"></i>
+                </button>
+
+                <!-- Account Settings & Switching Dropdown Menu -->
+                <div id="account-menu" class="hidden absolute right-0 mt-3 w-64 bg-neutral-900 border border-neutral-800 rounded-2xl shadow-2xl z-50 p-3 space-y-2">
+                    <div class="p-2 border-b border-neutral-800">
+                        <p class="text-xs text-neutral-400">Signed in as:</p>
+                        <p id="menu-user-email" class="text-xs font-mono text-neutral-200 truncate">No Active Account</p>
+                        <div id="menu-user-role-badge" class="mt-1 inline-block text-[10px] font-bold px-2 py-0.5 rounded bg-neutral-800 text-neutral-400 border border-neutral-700">Standard User</div>
+                    </div>
+
+                    <!-- Profile Switcher Section -->
+                    <div class="space-y-1 py-1">
+                        <div class="text-[10px] uppercase font-bold tracking-wider text-neutral-500 px-2">Active Profile</div>
+                        <button onclick="selectProfile('Adult')" class="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-neutral-200 hover:bg-neutral-800 flex items-center justify-between">
+                            <span class="flex items-center gap-2"><i class="fa-solid fa-user text-brand-400"></i> Adult Profile</span>
+                            <i id="check-adult-profile" class="fa-solid fa-check text-brand-500 text-xs"></i>
+                        </button>
+                        <button onclick="selectProfile('Kids')" class="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-neutral-200 hover:bg-neutral-800 flex items-center justify-between">
+                            <span class="flex items-center gap-2"><i class="fa-solid fa-child text-amber-400"></i> Kids Profile</span>
+                            <i id="check-kids-profile" class="fa-solid fa-check text-brand-500 text-xs hidden"></i>
+                        </button>
+                    </div>
+
+                    <div class="border-t border-neutral-800 pt-2">
+                        <button id="auth-modal-trigger-btn" onclick="openAuthModal()" class="w-full px-3 py-2 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-semibold text-xs transition flex items-center justify-center space-x-2">
+                            <i class="fa-solid fa-right-to-bracket"></i>
+                            <span id="auth-btn-label">Sign In / Create Account</span>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -149,7 +202,6 @@
         <section id="view-catalog" class="space-y-6">
             <!-- Hero Announcement Banner -->
             <div class="relative rounded-2xl overflow-hidden bg-gradient-to-r from-neutral-900 via-neutral-900/90 to-brand-950/40 border border-neutral-800 p-6 sm:p-10 flex flex-col justify-end min-h-[260px] sm:min-h-[320px] shadow-2xl">
-                <div class="absolute inset-0 bg-cover bg-center opacity-20" style="background-image: url('https://images.unsplash.com/photo-1574375927938-d5a98e8ffe85?q=80&w=1200&auto=format&fit=crop');"></div>
                 <div class="relative z-10 max-w-2xl space-y-3">
                     <div class="inline-flex items-center space-x-2 px-2.5 py-1 rounded-full bg-brand-500/20 text-brand-400 border border-brand-500/30 text-xs font-bold uppercase tracking-wider">
                         <i class="fa-solid fa-bolt"></i> Real-Time Broadcast Catalog
@@ -228,10 +280,10 @@
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-neutral-800">
                 <div>
                     <h1 class="text-2xl font-black text-white tracking-tight flex items-center gap-3">
-                        <span>Creator Media Manager</span>
-                        <span class="text-xs font-normal text-emerald-400 bg-emerald-950/60 border border-emerald-800/40 px-2 py-0.5 rounded">Live Cloud Sync</span>
+                        <span>Creator Media & Broadcast Manager</span>
+                        <span class="text-xs font-normal text-emerald-400 bg-emerald-950/60 border border-emerald-800/40 px-2 py-0.5 rounded">Cross-Device Sync</span>
                     </h1>
-                    <p class="text-xs text-neutral-400 mt-1">Upload video files, extract metadata dynamically, and publish across all client playback profiles in real-time.</p>
+                    <p class="text-xs text-neutral-400 mt-1">Upload files, add YouTube URLs, and dispatch live broadcast notifications across all open devices and browsers.</p>
                 </div>
 
                 <div class="flex items-center space-x-2">
@@ -244,29 +296,57 @@
                 </div>
             </div>
 
-            <!-- TOP HALF: DRAG & DROP UPLOAD + METADATA EXTRACTION ENGINE -->
+            <!-- BROADCAST NOTIFICATION DISPATCH PANEL -->
+            <div class="bg-gradient-to-r from-neutral-900 via-neutral-900 to-brand-950/30 border border-brand-500/30 rounded-2xl p-6 space-y-4 shadow-xl">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-tower-broadcast text-brand-500 animate-pulse"></i>
+                        <span>Dispatch Real-Time Live Notification to ALL Devices & Browsers</span>
+                    </h3>
+                    <span class="text-[11px] font-mono bg-brand-500/20 text-brand-400 border border-brand-500/30 px-2 py-0.5 rounded">Global Firestore Snapshot Push</span>
+                </div>
+                
+                <form onsubmit="sendGlobalBroadcast(event)" class="flex flex-col sm:flex-row gap-3">
+                    <input type="text" id="broadcast-message-input" required placeholder="Type live announcement message (e.g. New movie 'Affairs of Cappy Ricks' just added live!)..." class="flex-1 bg-neutral-950 text-xs text-neutral-200 px-4 py-3 rounded-xl border border-neutral-800 focus:border-brand-500 outline-none">
+                    <button type="submit" class="px-6 py-3 bg-brand-500 hover:bg-brand-600 text-white font-bold text-xs rounded-xl shadow-lg shadow-brand-500/30 transition flex items-center justify-center space-x-2 whitespace-nowrap">
+                        <i class="fa-solid fa-paper-plane"></i>
+                        <span>Send Global Broadcast</span>
+                    </button>
+                </form>
+            </div>
+
+            <!-- TOP HALF: DRAG & DROP UPLOAD + YOUTUBE URL & METADATA EXTRACTION ENGINE -->
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                <!-- Drop Zone & Video File Picker -->
+                <!-- Drop Zone & Video File / YouTube Link Input -->
                 <div class="lg:col-span-7 space-y-4">
-                    <label class="block text-sm font-semibold text-neutral-300">1. Select or Drop Video File (MP4, WebM)</label>
-                    <div id="drop-zone" onclick="document.getElementById('video-file-input').click()" class="relative border-2 border-dashed border-neutral-700 hover:border-brand-500 bg-neutral-900/60 hover:bg-neutral-900 transition-all rounded-2xl p-8 text-center cursor-pointer flex flex-col items-center justify-center min-h-[240px] group">
-                        
+                    <label class="block text-sm font-semibold text-neutral-300">1. Upload Video File OR Paste YouTube URL</label>
+
+                    <!-- YouTube Direct Embed Option -->
+                    <div class="bg-neutral-900 border border-neutral-800 p-4 rounded-xl space-y-2">
+                        <span class="text-xs font-semibold text-red-400 flex items-center gap-1.5"><i class="fa-brands fa-youtube"></i> Add Playable YouTube Movie URL / Video ID</span>
+                        <div class="flex gap-2">
+                            <input type="text" id="youtube-url-input" placeholder="e.g. https://www.youtube.com/watch?v=J32R0vS-lXQ or J32R0vS-lXQ" class="flex-1 bg-neutral-950 text-xs text-neutral-200 px-3 py-2 rounded-lg border border-neutral-800 focus:border-red-500 outline-none font-mono">
+                            <button type="button" onclick="loadYouTubeMetadata()" class="px-3 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold text-xs rounded-lg transition">Fetch Details</button>
+                        </div>
+                    </div>
+
+                    <div id="drop-zone" onclick="document.getElementById('video-file-input').click()" class="relative border-2 border-dashed border-neutral-700 hover:border-brand-500 bg-neutral-900/60 hover:bg-neutral-900 transition-all rounded-2xl p-8 text-center cursor-pointer flex flex-col items-center justify-center min-h-[180px] group">
                         <input type="file" id="video-file-input" accept="video/mp4,video/webm,video/ogg" class="hidden" onchange="handleFileSelect(event)">
                         
-                        <div class="w-14 h-14 rounded-full bg-neutral-800 group-hover:bg-brand-500/20 group-hover:scale-110 transition-all flex items-center justify-center text-neutral-400 group-hover:text-brand-500 mb-3">
-                            <i class="fa-solid fa-cloud-arrow-up text-2xl"></i>
+                        <div class="w-12 h-12 rounded-full bg-neutral-800 group-hover:bg-brand-500/20 group-hover:scale-110 transition-all flex items-center justify-center text-neutral-400 group-hover:text-brand-500 mb-2">
+                            <i class="fa-solid fa-cloud-arrow-up text-xl"></i>
                         </div>
-                        <h3 class="text-sm font-semibold text-neutral-200">Drag & Drop video file here, or <span class="text-brand-400 underline">browse</span></h3>
-                        <p class="text-xs text-neutral-500 mt-1">Supports MP4, WebM, or OGG up to 50MB for local browser session storage</p>
+                        <h3 class="text-xs font-semibold text-neutral-200">Drag & Drop local video file here, or <span class="text-brand-400 underline">browse</span></h3>
+                        <p class="text-[11px] text-neutral-500 mt-1">Supports MP4, WebM, or OGG up to 50MB</p>
                         
-                        <div id="file-details-badge" class="hidden mt-4 px-3 py-1.5 rounded-lg bg-neutral-800 border border-neutral-700 text-xs font-mono text-neutral-300 flex items-center gap-2">
+                        <div id="file-details-badge" class="hidden mt-3 px-3 py-1 rounded-lg bg-neutral-800 border border-neutral-700 text-xs font-mono text-neutral-300 flex items-center gap-2">
                             <i class="fa-solid fa-file-video text-brand-400"></i>
                             <span id="file-name-text">filename.mp4</span>
                             <span id="file-size-text" class="text-neutral-500">(0 MB)</span>
                         </div>
                     </div>
 
-                    <!-- Dynamic Canvas Thumbnail Extractor (Hidden processing element) -->
+                    <!-- Dynamic Canvas Thumbnail Extractor -->
                     <video id="hidden-video-extractor" class="hidden" preload="metadata"></video>
                     <canvas id="thumbnail-canvas" class="hidden"></canvas>
                 </div>
@@ -293,12 +373,13 @@
                                     <option value="Documentary">Documentary</option>
                                     <option value="Animation">Animation</option>
                                     <option value="Drama">Drama</option>
+                                    <option value="Comedy">Comedy</option>
                                     <option value="Other">Other</option>
                                 </select>
                             </div>
                             <div>
                                 <label class="block text-xs font-medium text-neutral-400 mb-1">Duration</label>
-                                <input type="text" id="meta-duration" placeholder="Auto detected..." readonly class="w-full bg-neutral-950 text-xs text-neutral-400 font-mono px-3 py-2.5 rounded-lg border border-neutral-800 cursor-not-allowed">
+                                <input type="text" id="meta-duration" placeholder="Auto detected..." class="w-full bg-neutral-950 text-xs text-neutral-300 font-mono px-3 py-2.5 rounded-lg border border-neutral-800 outline-none">
                             </div>
                         </div>
 
@@ -309,65 +390,107 @@
 
                         <!-- Extracted Thumbnail Preview Box -->
                         <div>
-                            <label class="block text-xs font-medium text-neutral-400 mb-1">Thumbnail Preview (Auto-Captured Frame)</label>
+                            <label class="block text-xs font-medium text-neutral-400 mb-1">Thumbnail Preview</label>
                             <div class="relative h-28 rounded-lg border border-neutral-800 bg-neutral-950 overflow-hidden flex items-center justify-center group">
                                 <img id="meta-thumb-preview" src="https://placehold.co/600x400/18181b/ffffff?text=No+Thumbnail+Generated" class="w-full h-full object-cover">
-                                <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
-                                    <span class="text-[11px] font-medium text-white">Auto-captured frame 1.0s</span>
-                                </div>
                             </div>
                         </div>
 
                         <button type="submit" id="publish-btn" class="w-full py-3 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-bold text-xs uppercase tracking-wider transition shadow-lg shadow-brand-500/20 flex items-center justify-center space-x-2">
                             <i class="fa-solid fa-cloud-arrow-up"></i>
-                            <span>Push To Cloud Catalog</span>
+                            <span>Push To Cloud & Sync Everywhere</span>
                         </button>
                     </form>
                 </div>
             </div>
-
-            <!-- BOTTOM HALF: ADMIN CATALOG SYNC MANAGEMENT TABLE -->
-            <div class="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 space-y-4">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-sm font-bold text-neutral-200 flex items-center gap-2">
-                        <i class="fa-solid fa-list-check text-brand-500"></i>
-                        <span>Live Cloud Catalog Manager</span>
-                    </h3>
-                    <span class="text-xs text-neutral-400">Edits or deletions synchronize live across all client instances</span>
-                </div>
-
-                <!-- Responsive Table -->
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-xs text-neutral-300">
-                        <thead class="bg-neutral-950 text-neutral-400 font-semibold uppercase tracking-wider border-b border-neutral-800">
-                            <tr>
-                                <th class="py-3 px-4">Film Item</th>
-                                <th class="py-3 px-4">Genre</th>
-                                <th class="py-3 px-4">Duration</th>
-                                <th class="py-3 px-4">Source Type</th>
-                                <th class="py-3 px-4">Synced Timestamp</th>
-                                <th class="py-3 px-4 text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="admin-table-body" class="divide-y divide-neutral-800">
-                            <!-- Populated dynamically via JS -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
         </section>
-
     </main>
 
-    <!-- FULLSCREEN VIDEO PLAYER MODAL -->
+    <!-- AUTHENTICATION & ACCOUNT MODAL -->
+    <div id="auth-modal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-md items-center justify-center p-4">
+        <div class="bg-neutral-900 border border-neutral-800 w-full max-w-md rounded-2xl p-6 sm:p-8 space-y-6 shadow-2xl relative">
+            <button onclick="closeAuthModal()" class="absolute top-4 right-4 text-neutral-500 hover:text-white transition">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+
+            <div class="text-center space-y-2">
+                <div class="w-12 h-12 rounded-2xl bg-brand-500/20 border border-brand-500/30 text-brand-500 flex items-center justify-center mx-auto text-2xl">
+                    <i class="fa-solid fa-user-shield"></i>
+                </div>
+                <h3 id="auth-modal-title" class="text-xl font-bold text-white">Hippo Pippo Account Sync</h3>
+                <p id="auth-modal-subtitle" class="text-xs text-neutral-400">Sign in to automatically sync your watch progress & content across all devices.</p>
+            </div>
+
+            <!-- Auth Form -->
+            <form id="auth-form" onsubmit="handleAuthSubmit(event)" class="space-y-4">
+                <div id="username-field-wrapper" class="hidden">
+                    <label class="block text-xs font-medium text-neutral-400 mb-1">Username *</label>
+                    <input type="text" id="auth-username" placeholder="e.g. Eadams" class="w-full bg-neutral-950 text-xs text-neutral-200 px-4 py-3 rounded-xl border border-neutral-800 focus:border-brand-500 outline-none">
+                </div>
+                <div>
+                    <label id="auth-identifier-label" class="block text-xs font-medium text-neutral-400 mb-1">Email Address or Username</label>
+                    <input type="text" id="auth-email" required placeholder="user@example.com or Eadams" class="w-full bg-neutral-950 text-xs text-neutral-200 px-4 py-3 rounded-xl border border-neutral-800 focus:border-brand-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-neutral-400 mb-1">Password</label>
+                    <input type="password" id="auth-password" required placeholder="••••••••" class="w-full bg-neutral-950 text-xs text-neutral-200 px-4 py-3 rounded-xl border border-neutral-800 focus:border-brand-500 outline-none">
+                </div>
+
+                <div class="flex items-center justify-between text-xs pt-1">
+                    <button type="button" id="auth-toggle-mode-btn" onclick="toggleAuthMode()" class="text-brand-400 hover:underline font-semibold">Need an account? Sign Up</button>
+                </div>
+
+                <button type="submit" id="auth-submit-btn" class="w-full py-3 bg-brand-500 hover:bg-brand-600 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition shadow-lg shadow-brand-500/20">
+                    Sign In
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ACCOUNT SYNCHRONIZED POPUP MODAL -->
+    <div id="account-synced-modal" class="fixed inset-0 z-50 hidden bg-black/85 backdrop-blur-md items-center justify-center p-4">
+        <div class="bg-neutral-900 border border-brand-500/50 w-full max-w-sm rounded-2xl p-6 text-center space-y-4 shadow-2xl relative">
+            <div class="w-16 h-16 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center mx-auto text-3xl pulse-glow">
+                <i class="fa-solid fa-arrows-rotate text-emerald-400"></i>
+            </div>
+            <div>
+                <span class="px-2.5 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-700/50 text-[10px] font-mono uppercase font-bold tracking-wider">Live Cloud Sync Established</span>
+                <h3 class="text-xl font-extrabold text-white mt-2">Account Synchronized!</h3>
+                <p id="synced-modal-email" class="text-xs text-brand-400 font-mono mt-1">user@example.com</p>
+            </div>
+            
+            <div class="bg-neutral-950 border border-neutral-800 rounded-xl p-3 text-left space-y-2 text-xs">
+                <div class="flex justify-between items-center border-b border-neutral-800 pb-1.5">
+                    <span class="text-neutral-400">Sync Status</span>
+                    <span class="text-emerald-400 font-bold flex items-center gap-1"><i class="fa-solid fa-circle text-[8px]"></i> Active Everywhere</span>
+                </div>
+                <div class="flex justify-between items-center border-b border-neutral-800 pb-1.5">
+                    <span class="text-neutral-400">Profile Type</span>
+                    <span id="synced-modal-profile" class="text-neutral-200 font-medium">Adult Profile</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-neutral-400">Device Handshake</span>
+                    <span class="text-neutral-300 font-mono text-[10px]">Cross-Browser Enabled</span>
+                </div>
+            </div>
+
+            <p class="text-[11px] text-neutral-400">Your film library, watch progress, and live broadcast notifications will now sync instantly across all browsers and devices.</p>
+
+            <button onclick="closeAccountSyncedModal()" class="w-full py-2.5 bg-brand-500 hover:bg-brand-600 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition shadow-lg shadow-brand-500/30">
+                Start Streaming & Syncing
+            </button>
+        </div>
+    </div>
+
+    <!-- FULLSCREEN VIDEO PLAYER MODAL WITH YOUTUBE & LOCAL EMBED SUPPORT -->
     <div id="video-modal" class="fixed inset-0 z-50 hidden bg-black/95 backdrop-blur-xl flex flex-col justify-between">
         <!-- Player Header Toolbar -->
-        <div class="p-4 sm:p-6 flex items-center justify-between text-white bg-gradient-to-b from-black/80 to-transparent z-10">
+        <div class="p-4 sm:p-6 flex items-center justify-between text-white bg-gradient-to-b from-black/90 to-transparent z-10">
             <div class="flex items-center space-x-3">
                 <span class="w-3 h-3 rounded-full bg-brand-500 pulse-glow"></span>
                 <div>
                     <h3 id="modal-video-title" class="font-bold text-base sm:text-lg text-neutral-100">Video Title</h3>
-                    <p id="modal-video-subtitle" class="text-xs text-neutral-400">Streaming from Hippo Pippo Sync Engine</p>
+                    <p id="modal-video-subtitle" class="text-xs text-neutral-400">Streaming from Hippo Pippo Cloud Engine</p>
                 </div>
             </div>
             <button onclick="closeVideoModal()" class="w-10 h-10 rounded-full bg-neutral-900/80 hover:bg-neutral-800 text-neutral-300 hover:text-white flex items-center justify-center transition border border-neutral-700">
@@ -375,14 +498,15 @@
             </button>
         </div>
 
-        <!-- HTML5 Video Player Container -->
-        <div class="flex-1 flex items-center justify-center relative p-2 sm:p-6">
-            <video id="modal-player" controls autoplay class="max-h-full max-w-full rounded-xl shadow-2xl bg-black border border-neutral-800"></video>
+        <!-- Video Player Container Slot (HTML5 Video or YouTube iFrame) -->
+        <div id="player-container" class="flex-1 flex items-center justify-center relative p-2 sm:p-6">
+            <!-- Dynamic elements appended via JS -->
         </div>
 
         <!-- Footer Bar -->
-        <div class="p-4 text-center text-xs text-neutral-500 bg-gradient-to-t from-black/80 to-transparent">
-            Real-time multi-device synchronized player session
+        <div class="p-4 text-center text-xs text-neutral-500 bg-gradient-to-t from-black/90 to-transparent flex items-center justify-between max-w-7xl mx-auto w-full">
+            <span id="player-sync-indicator" class="text-emerald-400 font-mono text-[11px]"><i class="fa-solid fa-cloud"></i> Progress auto-synced across devices</span>
+            <span>Hippo Pippo Real-Time Broadcast Session</span>
         </div>
     </div>
 
@@ -396,428 +520,149 @@
            ========================================================================= */
         const APP_ID = typeof __app_id !== 'undefined' ? __app_id : 'hippo-pippo-sync-v1';
         
-        // In-Memory Catalog State
         let filmCatalog = [];
+        let broadcastNotifications = [];
+        let unreadNotifCount = 0;
+        let activeProfile = 'Adult';
+        let isAuthSignUpMode = false;
+        let currentPlayingFilmId = null;
+
         let selectedFileBlob = null;
         let generatedThumbnailUrl = '';
         let extractedDurationStr = '0:00';
+        let customYoutubeId = null;
         
-        // Firebase Cloud Variables
         let db = null;
         let auth = null;
         let currentUser = null;
         let isFirebaseActive = false;
 
-        // Default Sample Seed Data
+        // Verified Admin Account Details
+        const VERIFIED_ADMIN = {
+            username: 'Eadams',
+            email: 'eadams@hippopippo.com',
+            password: 'Floof2020',
+            role: 'Verified Admin'
+        };
+
+        // Broadcast Channel for Multi-Tab & Multi-Browser Real-Time Sync Fallback
+        const broadcastChannel = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('hippo_global_sync') : null;
+
+        if (broadcastChannel) {
+            broadcastChannel.onmessage = (event) => {
+                const { type, data } = event.data;
+                if (type === 'NEW_NOTIFICATION') {
+                    addNotificationToState(data, false);
+                } else if (type === 'CATALOG_UPDATE') {
+                    filmCatalog = data;
+                    renderCatalog();
+                    showToast("Library updated live across tabs!", "info");
+                }
+            };
+        }
+
+        // Sample Movie Library
         const SAMPLE_MOVIES = [
             {
-                id: 'sample-1',
-                title: 'Cosmic Journey 4K',
-                genre: 'Sci-Fi',
-                duration: '0:15',
-                desc: 'A cinematic high-speed journey across interstellar nebulae and star clusters.',
-                thumbnail: 'https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?q=80&w=800&auto=format&fit=crop',
-                videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
-                sourceType: 'Cloud Stream',
-                timestamp: Date.now() - 3600000
+                id: 'yt-cappy-ricks',
+                title: 'Affairs of Cappy Ricks (1937)',
+                genre: 'Comedy',
+                duration: '56:00',
+                desc: 'Classic vintage comedy film following skipper Cappy Ricks in an engaging sea adventure.',
+                thumbnail: 'https://img.youtube.com/vi/XUbnmtrytw8/hqdefault.jpg',
+                videoUrl: 'https://www.youtube.com/embed/XUbnmtrytw8?autoplay=1',
+                youtubeId: 'XUbnmtrytw8',
+                sourceType: 'YouTube Stream',
+                timestamp: Date.now() - 100000
             },
             {
-                id: 'sample-2',
-                title: 'Ocean Deep Explorations',
-                genre: 'Documentary',
-                duration: '0:10',
-                desc: 'Uncharted abyssal waters and glowing marine organisms in ultra high definition.',
-                thumbnail: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=800&auto=format&fit=crop',
-                videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
-                sourceType: 'Cloud Stream',
-                timestamp: Date.now() - 7200000
+                id: 'yt-sainted-sisters',
+                title: 'The Sainted Sisters (1948)',
+                genre: 'Drama',
+                duration: '1:29:00',
+                desc: 'Classic comedy drama following two women fleeing to a remote Maine town with stolen funds.',
+                thumbnail: 'https://img.youtube.com/vi/jg9gTszI6AM/hqdefault.jpg',
+                videoUrl: 'https://www.youtube.com/embed/jg9gTszI6AM?autoplay=1',
+                youtubeId: 'jg9gTszI6AM',
+                sourceType: 'YouTube Stream',
+                timestamp: Date.now() - 200000
             },
             {
-                id: 'sample-3',
-                title: 'Cyber City 2099',
-                genre: 'Action',
-                duration: '0:12',
-                desc: 'Neon lights and rain-soaked highways in a sprawling futuristic megacity.',
-                thumbnail: 'https://images.unsplash.com/photo-1519501025264-65ba15a82390?q=80&w=800&auto=format&fit=crop',
-                videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
-                sourceType: 'Cloud Stream',
-                timestamp: Date.now() - 10800000
+                id: 'yt-magical-world',
+                title: 'The Magical World (Full Animated Film)',
+                genre: 'Animation',
+                duration: '1:10:00',
+                desc: 'An impossible adventure begins across mystical fantasy realms and uncharted dimensions.',
+                thumbnail: 'https://img.youtube.com/vi/st26oLsmiI8/hqdefault.jpg',
+                videoUrl: 'https://www.youtube.com/embed/st26oLsmiI8?autoplay=1',
+                youtubeId: 'st26oLsmiI8',
+                sourceType: 'YouTube Stream',
+                timestamp: Date.now() - 300000
             }
         ];
 
-        /* =========================================================================
-           2. FIREBASE & MULTI-TAB STORAGE INITIALIZATION
-           ========================================================================= */
-        window.addEventListener('DOMContentLoaded', async () => {
-            setupDragAndDrop();
-            initLocalBroadcastChannel();
-
-            // Attempt Firebase Initialization if config is present
-            if (typeof __firebase_config !== 'undefined' && window.FirebaseSDK) {
-                try {
-                    const { initializeApp, getAuth, signInWithCustomToken, signInAnonymously, getFirestore, collection, onSnapshot } = window.FirebaseSDK;
-                    const firebaseConfig = JSON.parse(__firebase_config);
-                    const app = initializeApp(firebaseConfig);
-                    auth = getAuth(app);
-                    db = getFirestore(app);
-
-                    // Authenticate session
-                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                        await signInWithCustomToken(auth, __initial_auth_token);
-                    } else {
-                        await signInAnonymously(auth);
-                    }
-
-                    currentUser = auth.currentUser;
-                    document.getElementById('user-id-display').textContent = `UID: ${currentUser.uid.substring(0, 8)}...`;
-                    
-                    // Listen to Firestore public collection following mandatory Rule 1
-                    const publicCatalogRef = collection(db, 'artifacts', APP_ID, 'public', 'data', 'films');
-                    
-                    onSnapshot(publicCatalogRef, (snapshot) => {
-                        const cloudFilms = [];
-                        snapshot.forEach((doc) => {
-                            cloudFilms.push({ id: doc.id, ...doc.data() });
-                        });
-                        
-                        if (cloudFilms.length > 0) {
-                            filmCatalog = cloudFilms.sort((a, b) => b.timestamp - a.timestamp);
-                            updateCatalogViews();
-                        } else {
-                            // If cloud collection empty, fallback to local/sample
-                            loadLocalCatalog();
-                        }
-                    }, (error) => {
-                        console.warn('Firestore snapshot warning, falling back to local storage:', error);
-                        loadLocalCatalog();
-                    });
-
-                    isFirebaseActive = true;
-                    updateSyncBadge(true, "Firebase Cloud Live");
-                } catch (e) {
-                    console.warn("Firebase initialization failed, utilizing LocalStorage Broadcast Sync:", e);
-                    loadLocalCatalog();
-                }
-            } else {
-                loadLocalCatalog();
+        /* Close modal on ESC key */
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeVideoModal();
+                closeAuthModal();
+                closeAccountSyncedModal();
             }
         });
 
-        // Local Storage & Broadcast Channel Sync Fallback
-        let broadcastChannel = null;
-        function initLocalBroadcastChannel() {
-            try {
-                broadcastChannel = new BroadcastChannel('hippo_pippo_catalog_sync');
-                broadcastChannel.onmessage = (event) => {
-                    if (event.data && event.data.type === 'CATALOG_UPDATE') {
-                        filmCatalog = event.data.catalog;
-                        updateCatalogViews();
-                        showToast("Real-time sync: Catalog updated from another tab!", "info");
-                    }
-                };
-            } catch (e) {
-                console.warn('BroadcastChannel not supported in this browser.');
-            }
-        }
-
-        function loadLocalCatalog() {
-            const saved = localStorage.getItem('hippo_pippo_films');
-            if (saved) {
-                try {
-                    filmCatalog = JSON.parse(saved);
-                } catch(e) {
-                    filmCatalog = [...SAMPLE_MOVIES];
-                }
-            } else {
-                filmCatalog = [...SAMPLE_MOVIES];
-                saveLocalCatalog();
-            }
-            updateCatalogViews();
-            updateSyncBadge(true, "Local Session Sync Active");
-        }
-
-        function saveLocalCatalog() {
-            localStorage.setItem('hippo_pippo_films', JSON.stringify(filmCatalog));
-            if (broadcastChannel) {
-                broadcastChannel.postMessage({ type: 'CATALOG_UPDATE', catalog: filmCatalog });
-            }
-        }
-
         /* =========================================================================
-           3. UI NAVIGATION & TABS
+           2. RENDER CATALOG & ADMIN MEDIA LISTS
            ========================================================================= */
         function switchTab(tab) {
-            const viewCatalog = document.getElementById('view-catalog');
-            const viewAdmin = document.getElementById('view-admin');
-            const navCatalogBtn = document.getElementById('nav-catalog-btn');
-            const navAdminBtn = document.getElementById('nav-admin-btn');
-            const mobCatalogBtn = document.getElementById('mobile-nav-catalog');
-            const mobAdminBtn = document.getElementById('mobile-nav-admin');
+            const catalogView = document.getElementById('view-catalog');
+            const adminView = document.getElementById('view-admin');
+            const catalogBtn = document.getElementById('nav-catalog-btn');
+            const adminBtn = document.getElementById('nav-admin-btn');
+            const mCatalogBtn = document.getElementById('mobile-nav-catalog');
+            const mAdminBtn = document.getElementById('mobile-nav-admin');
 
             if (tab === 'catalog') {
-                viewCatalog.classList.remove('hidden');
-                viewAdmin.classList.add('hidden');
-
-                navCatalogBtn.className = "px-4 py-1.5 rounded-lg text-sm font-medium transition-all bg-brand-500 text-white shadow-lg";
-                navAdminBtn.className = "px-4 py-1.5 rounded-lg text-sm font-medium text-neutral-400 hover:text-white hover:bg-neutral-800 transition-all";
+                catalogView.classList.remove('hidden');
+                adminView.classList.add('hidden');
                 
-                mobCatalogBtn.className = "flex-1 py-2 rounded-lg text-xs font-semibold bg-brand-500 text-white text-center";
-                mobAdminBtn.className = "flex-1 py-2 rounded-lg text-xs font-semibold text-neutral-400 bg-neutral-800 text-center";
-            } else {
-                viewCatalog.classList.add('hidden');
-                viewAdmin.classList.remove('hidden');
-
-                navAdminBtn.className = "px-4 py-1.5 rounded-lg text-sm font-medium transition-all bg-brand-500 text-white shadow-lg";
-                navCatalogBtn.className = "px-4 py-1.5 rounded-lg text-sm font-medium text-neutral-400 hover:text-white hover:bg-neutral-800 transition-all";
-
-                mobAdminBtn.className = "flex-1 py-2 rounded-lg text-xs font-semibold bg-brand-500 text-white text-center";
-                mobCatalogBtn.className = "flex-1 py-2 rounded-lg text-xs font-semibold text-neutral-400 bg-neutral-800 text-center";
-            }
-        }
-
-        function updateSyncBadge(isLive, labelText) {
-            const statusText = document.getElementById('sync-status-text');
-            statusText.textContent = labelText;
-        }
-
-        /* =========================================================================
-           4. VIDEO FILE HANDLING & AUTOMATED THUMBNAIL CANVAS EXTRACTION
-           ========================================================================= */
-        function setupDragAndDrop() {
-            const dropZone = document.getElementById('drop-zone');
-
-            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-                dropZone.addEventListener(eventName, preventDefaults, false);
-            });
-
-            function preventDefaults(e) {
-                e.preventDefault();
-                e.stopPropagation();
-            }
-
-            ['dragenter', 'dragover'].forEach(eventName => {
-                dropZone.addEventListener(eventName, () => dropZone.classList.add('border-brand-500', 'bg-neutral-900'), false);
-            });
-
-            ['dragleave', 'drop'].forEach(eventName => {
-                dropZone.addEventListener(eventName, () => dropZone.classList.remove('border-brand-500', 'bg-neutral-900'), false);
-            });
-
-            dropZone.addEventListener('drop', (e) => {
-                const dt = e.dataTransfer;
-                const files = dt.files;
-                if (files.length > 0) {
-                    processSelectedVideoFile(files[0]);
-                }
-            });
-        }
-
-        function handleFileSelect(event) {
-            const files = event.target.files;
-            if (files.length > 0) {
-                processSelectedVideoFile(files[0]);
-            }
-        }
-
-        function processSelectedVideoFile(file) {
-            if (!file.type.startsWith('video/')) {
-                showToast("Please select a valid video file (MP4, WebM, OGG)", "error");
-                return;
-            }
-
-            selectedFileBlob = file;
-
-            // UI badge display
-            document.getElementById('file-details-badge').classList.remove('hidden');
-            document.getElementById('file-name-text').textContent = file.name;
-            document.getElementById('file-size-text').textContent = `(${(file.size / (1024 * 1024)).toFixed(1)} MB)`;
-
-            // Auto-fill Title if empty
-            const titleInput = document.getElementById('meta-title');
-            if (!titleInput.value) {
-                const cleanName = file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
-                titleInput.value = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
-            }
-
-            // Extract metadata via hidden HTML5 video element
-            const videoElement = document.getElementById('hidden-video-extractor');
-            const fileURL = URL.createObjectURL(file);
-            videoElement.src = fileURL;
-
-            videoElement.onloadedmetadata = () => {
-                // Calculate duration string
-                const totalSeconds = Math.floor(videoElement.duration);
-                const minutes = Math.floor(totalSeconds / 60);
-                const seconds = totalSeconds % 60;
-                extractedDurationStr = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
-                document.getElementById('meta-duration').value = extractedDurationStr;
-
-                // Seek to 1 second to capture frame thumbnail
-                videoElement.currentTime = Math.min(1.0, videoElement.duration / 2);
-            };
-
-            videoElement.onseeked = () => {
-                // Draw current frame to canvas
-                const canvas = document.getElementById('thumbnail-canvas');
-                canvas.width = 640;
-                canvas.height = 360;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+                catalogBtn.className = "px-4 py-1.5 rounded-lg text-sm font-medium transition-all bg-brand-500 text-white shadow-lg";
+                adminBtn.className = "px-4 py-1.5 rounded-lg text-sm font-medium text-neutral-400 hover:text-white hover:bg-neutral-800 transition-all";
                 
-                try {
-                    generatedThumbnailUrl = canvas.toDataURL('image/jpeg', 0.85);
-                    document.getElementById('meta-thumb-preview').src = generatedThumbnailUrl;
-                } catch(e) {
-                    console.warn("Could not generate inline thumbnail base64:", e);
-                    generatedThumbnailUrl = 'https://placehold.co/600x400/18181b/ffffff?text=Video+File+Uploaded';
-                    document.getElementById('meta-thumb-preview').src = generatedThumbnailUrl;
-                }
-            };
-        }
-
-        /* =========================================================================
-           5. PUBLISH & SYNC ACTIONS
-           ========================================================================= */
-        async function publishNewFilm(event) {
-            event.preventDefault();
-
-            const title = document.getElementById('meta-title').value.trim();
-            const genre = document.getElementById('meta-genre').value;
-            const desc = document.getElementById('meta-desc').value.trim() || 'No description provided.';
-            const duration = extractedDurationStr || '0:00';
-
-            if (!title) {
-                showToast("Please provide a film title", "error");
-                return;
-            }
-
-            let videoUrl = '';
-            if (selectedFileBlob) {
-                videoUrl = URL.createObjectURL(selectedFileBlob);
+                mCatalogBtn.className = "flex-1 py-2 rounded-lg text-xs font-semibold bg-brand-500 text-white text-center";
+                mAdminBtn.className = "flex-1 py-2 rounded-lg text-xs font-semibold text-neutral-400 bg-neutral-800 text-center";
             } else {
-                // Fallback default sample video if no file dropped
-                videoUrl = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4';
-            }
+                catalogView.classList.add('hidden');
+                adminView.classList.remove('hidden');
 
-            const newFilm = {
-                id: 'film-' + Date.now(),
-                title: title,
-                genre: genre,
-                duration: duration,
-                desc: desc,
-                thumbnail: generatedThumbnailUrl || 'https://images.unsplash.com/photo-1485846234645-a62644f84728?q=80&w=800&auto=format&fit=crop',
-                videoUrl: videoUrl,
-                sourceType: selectedFileBlob ? 'Uploaded Local Blob' : 'Cloud Stream',
-                timestamp: Date.now()
-            };
+                adminBtn.className = "px-4 py-1.5 rounded-lg text-sm font-medium transition-all bg-brand-500 text-white shadow-lg";
+                catalogBtn.className = "px-4 py-1.5 rounded-lg text-sm font-medium text-neutral-400 hover:text-white hover:bg-neutral-800 transition-all";
 
-            // Save to Firestore if available
-            if (isFirebaseActive && db) {
-                try {
-                    const { collection, setDoc, doc } = window.FirebaseSDK;
-                    const docRef = doc(collection(db, 'artifacts', APP_ID, 'public', 'data', 'films'), newFilm.id);
-                    await setDoc(docRef, newFilm);
-                    showToast(`"${title}" published & synced to Cloud!`, "success");
-                } catch (e) {
-                    console.error("Firestore publish error, using local state:", e);
-                    filmCatalog.unshift(newFilm);
-                    saveLocalCatalog();
-                    updateCatalogViews();
-                    showToast(`"${title}" saved to local synced session!`, "success");
-                }
-            } else {
-                filmCatalog.unshift(newFilm);
-                saveLocalCatalog();
-                updateCatalogViews();
-                showToast(`"${title}" published across browser sync!`, "success");
-            }
-
-            // Reset form
-            document.getElementById('upload-form').reset();
-            document.getElementById('file-details-badge').classList.add('hidden');
-            document.getElementById('meta-thumb-preview').src = 'https://placehold.co/600x400/18181b/ffffff?text=No+Thumbnail+Generated';
-            selectedFileBlob = null;
-            generatedThumbnailUrl = '';
-        }
-
-        async function deleteFilm(filmId) {
-            if (isFirebaseActive && db) {
-                try {
-                    const { doc, deleteDoc } = window.FirebaseSDK;
-                    await deleteDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'films', filmId));
-                    showToast("Film removed from Cloud Catalog", "info");
-                } catch (e) {
-                    console.error("Cloud deletion failed:", e);
-                    filmCatalog = filmCatalog.filter(f => f.id !== filmId);
-                    saveLocalCatalog();
-                    updateCatalogViews();
-                }
-            } else {
-                filmCatalog = filmCatalog.filter(f => f.id !== filmId);
-                saveLocalCatalog();
-                updateCatalogViews();
-                showToast("Film removed from synced catalog", "info");
+                mAdminBtn.className = "flex-1 py-2 rounded-lg text-xs font-semibold bg-brand-500 text-white text-center";
+                mCatalogBtn.className = "flex-1 py-2 rounded-lg text-xs font-semibold text-neutral-400 bg-neutral-800 text-center";
             }
         }
+        window.switchTab = switchTab;
 
-        async function triggerSampleSeed() {
-            if (isFirebaseActive && db) {
-                try {
-                    const { collection, setDoc, doc } = window.FirebaseSDK;
-                    for (const movie of SAMPLE_MOVIES) {
-                        const docRef = doc(collection(db, 'artifacts', APP_ID, 'public', 'data', 'films'), movie.id);
-                        await setDoc(docRef, movie);
-                    }
-                    showToast("Seeded 3 sample films to Cloud!", "success");
-                } catch(e) {
-                    console.error(e);
-                }
-            } else {
-                filmCatalog = [...SAMPLE_MOVIES];
-                saveLocalCatalog();
-                updateCatalogViews();
-                showToast("Seeded 3 sample movies into catalog!", "success");
-            }
-        }
-
-        async function clearAllFilms() {
-            if (isFirebaseActive && db) {
-                try {
-                    const { doc, deleteDoc } = window.FirebaseSDK;
-                    for (const film of filmCatalog) {
-                        await deleteDoc(doc(db, 'artifacts', APP_ID, 'public', 'data', 'films', film.id));
-                    }
-                } catch(e) {
-                    console.error(e);
-                }
-            }
-            filmCatalog = [];
-            saveLocalCatalog();
-            updateCatalogViews();
-            showToast("Catalog cleared", "info");
-        }
-
-        /* =========================================================================
-           6. DYNAMIC RENDERING ENGINES
-           ========================================================================= */
         function updateCatalogViews() {
             renderCatalog();
             renderAdminTable();
         }
+        window.updateCatalogViews = updateCatalogViews;
 
         function renderCatalog() {
             const grid = document.getElementById('media-grid');
             const emptyState = document.getElementById('empty-catalog-state');
-            const genreFilter = document.getElementById('genre-filter').value;
-            const searchQuery = document.getElementById('catalog-search').value.toLowerCase().trim();
+            const searchVal = (document.getElementById('catalog-search')?.value || '').toLowerCase();
+            const genreVal = document.getElementById('genre-filter')?.value || 'ALL';
+            const countBadge = document.getElementById('catalog-count-badge');
 
-            const filtered = filmCatalog.filter(film => {
-                const matchesGenre = (genreFilter === 'ALL font-normal' || genreFilter === 'All Genres' || film.genre === genreFilter);
-                const matchesSearch = film.title.toLowerCase().includes(searchQuery) || film.desc.toLowerCase().includes(searchQuery);
-                return matchesGenre && matchesSearch;
+            let filtered = filmCatalog.filter(film => {
+                const matchesSearch = film.title.toLowerCase().includes(searchVal) || film.desc.toLowerCase().includes(searchVal);
+                const matchesGenre = genreVal === 'ALL' || film.genre === genreVal;
+                return matchesSearch && matchesGenre;
             });
 
-            document.getElementById('catalog-count-badge').textContent = `${filtered.length} titles`;
+            if (countBadge) countBadge.textContent = `${filtered.length} titles`;
 
             if (filtered.length === 0) {
                 grid.innerHTML = '';
@@ -827,29 +672,28 @@
 
             emptyState.classList.add('hidden');
             grid.innerHTML = filtered.map(film => `
-                <div class="group bg-neutral-900 border border-neutral-800 rounded-2xl overflow-hidden hover:border-neutral-700 transition-all duration-300 flex flex-col justify-between hover:-translate-y-1 shadow-lg">
-                    <!-- Thumbnail Container with Play Overlay -->
-                    <div class="relative aspect-video bg-neutral-950 overflow-hidden cursor-pointer" onclick="openVideoModal('${film.id}')">
-                        <img src="${film.thumbnail}" alt="${film.title}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" onerror="this.src='https://placehold.co/600x400/18181b/ffffff?text=Hippo+Pippo+Stream'">
+                <div class="group bg-neutral-900 border border-neutral-800 hover:border-neutral-700 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 flex flex-col justify-between cursor-pointer" onclick="openVideoModal('${film.id}')">
+                    <div class="relative aspect-video bg-neutral-950 overflow-hidden">
+                        <img src="${film.thumbnail}" alt="${film.title}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" onerror="this.src='https://placehold.co/600x400/18181b/ffffff?text=Video+Stream'">
                         
-                        <div class="absolute inset-0 bg-gradient-to-t from-neutral-950 via-transparent to-transparent opacity-60"></div>
+                        <div class="absolute inset-0 bg-gradient-to-t from-neutral-950 via-neutral-950/20 to-transparent opacity-80 group-hover:opacity-60 transition-opacity"></div>
                         
-                        <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/40 backdrop-blur-[2px]">
-                            <div class="w-12 h-12 rounded-full bg-brand-500 text-white flex items-center justify-center shadow-xl transform scale-75 group-hover:scale-100 transition-transform">
-                                <i class="fa-solid fa-play text-lg ml-1"></i>
-                            </div>
+                        <div class="absolute top-3 left-3 flex items-center gap-2">
+                            <span class="px-2 py-0.5 rounded-md bg-neutral-900/90 backdrop-blur border border-neutral-700 text-[10px] font-bold uppercase tracking-wider text-neutral-300">${film.genre}</span>
                         </div>
 
-                        <span class="absolute top-3 left-3 bg-neutral-950/80 backdrop-blur-md text-neutral-300 border border-neutral-800 px-2.5 py-0.5 rounded-full text-[10px] font-semibold">
-                            ${film.genre}
-                        </span>
-
-                        <span class="absolute bottom-3 right-3 bg-black/70 font-mono text-[10px] text-neutral-300 px-2 py-0.5 rounded">
+                        <div class="absolute bottom-3 right-3 px-2 py-0.5 rounded bg-black/80 text-[10px] font-mono text-neutral-300">
                             ${film.duration}
-                        </span>
+                        </div>
+
+                        <!-- Hover Play Overlay Button -->
+                        <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 backdrop-blur-[2px]">
+                            <div class="w-12 h-12 rounded-full bg-brand-500 text-white flex items-center justify-center text-lg shadow-xl shadow-brand-500/50 transform group-hover:scale-110 transition-transform">
+                                <i class="fa-solid fa-play ml-1"></i>
+                            </div>
+                        </div>
                     </div>
 
-                    <!-- Meta Details -->
                     <div class="p-4 flex-1 flex flex-col justify-between space-y-3">
                         <div>
                             <h3 class="font-bold text-sm text-white group-hover:text-brand-400 transition-colors line-clamp-1">${film.title}</h3>
@@ -860,7 +704,7 @@
                             <span class="flex items-center gap-1.5">
                                 <i class="fa-solid fa-bolt text-amber-500"></i> ${film.sourceType || 'Synced'}
                             </span>
-                            <button onclick="openVideoModal('${film.id}')" class="text-brand-400 font-semibold hover:underline">
+                            <button onclick="event.stopPropagation(); openVideoModal('${film.id}')" class="text-brand-400 font-semibold hover:underline">
                                 Watch Now <i class="fa-solid fa-chevron-right text-[9px] ml-0.5"></i>
                             </button>
                         </div>
@@ -868,101 +712,608 @@
                 </div>
             `).join('');
         }
-
-        function renderAdminTable() {
-            const tbody = document.getElementById('admin-table-body');
-            if (filmCatalog.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="6" class="text-center py-8 text-neutral-500">No media titles found in sync catalog.</td>
-                    </tr>
-                `;
-                return;
-            }
-
-            tbody.innerHTML = filmCatalog.map(film => {
-                const dateStr = new Date(film.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                return `
-                    <tr class="hover:bg-neutral-950/50 transition">
-                        <td class="py-3.5 px-4 font-semibold text-neutral-200 flex items-center space-x-3">
-                            <img src="${film.thumbnail}" class="w-10 h-7 object-cover rounded bg-neutral-800 border border-neutral-700" onerror="this.src='https://placehold.co/100x100/18181b/ffffff?text=Media'">
-                            <span class="line-clamp-1">${film.title}</span>
-                        </td>
-                        <td class="py-3.5 px-4">
-                            <span class="px-2 py-0.5 rounded bg-neutral-800 text-neutral-300 border border-neutral-700 text-[10px] font-medium">${film.genre}</span>
-                        </td>
-                        <td class="py-3.5 px-4 font-mono text-neutral-400">${film.duration}</td>
-                        <td class="py-3.5 px-4 text-neutral-400">${film.sourceType || 'Cloud'}</td>
-                        <td class="py-3.5 px-4 font-mono text-neutral-500 text-[11px]">${dateStr}</td>
-                        <td class="py-3.5 px-4 text-right space-x-2">
-                            <button onclick="openVideoModal('${film.id}')" class="p-1.5 text-neutral-400 hover:text-white transition" title="Preview Video">
-                                <i class="fa-solid fa-circle-play"></i>
-                            </button>
-                            <button onclick="deleteFilm('${film.id}')" class="p-1.5 text-red-400 hover:text-red-300 transition" title="Delete & Remove Sync">
-                                <i class="fa-solid fa-trash"></i>
-                            </button>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
-        }
+        window.renderCatalog = renderCatalog;
 
         /* =========================================================================
-           7. MEDIA PLAYER MODAL ENGINE
+           3. MEDIA PLAYER MODAL OPEN & CLOSE LOGIC
            ========================================================================= */
         function openVideoModal(filmId) {
             const film = filmCatalog.find(f => f.id === filmId);
-            if (!film) return;
+            if (!film) {
+                showToast("Movie not found in catalog", "error");
+                return;
+            }
 
+            currentPlayingFilmId = filmId;
             const modal = document.getElementById('video-modal');
-            const player = document.getElementById('modal-player');
+            const container = document.getElementById('player-container');
             
             document.getElementById('modal-video-title').textContent = film.title;
             document.getElementById('modal-video-subtitle').textContent = `${film.genre} • ${film.duration} • ${film.desc}`;
             
-            player.src = film.videoUrl;
+            container.innerHTML = '';
+
+            // Handle YouTube Embed vs HTML5 Video Source
+            if (film.youtubeId || (film.videoUrl && film.videoUrl.includes('youtube.com'))) {
+                let ytId = film.youtubeId;
+                if (!ytId && film.videoUrl) {
+                    const match = film.videoUrl.match(/(?:embed\/|v\/|watch\?v=)([^#\&\?]*)/);
+                    if (match && match[1]) ytId = match[1];
+                }
+
+                container.innerHTML = `
+                    <iframe class="w-full max-w-5xl aspect-video rounded-2xl shadow-2xl border border-neutral-800"
+                        src="https://www.youtube.com/embed/${ytId}?autoplay=1&enablejsapi=1&rel=0" 
+                        title="${film.title}" 
+                        frameborder="0" 
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                        allowfullscreen>
+                    </iframe>
+                `;
+            } else {
+                container.innerHTML = `
+                    <video id="modal-player" controls autoplay class="w-full max-w-5xl max-h-[75vh] rounded-2xl shadow-2xl bg-black border border-neutral-800">
+                        <source src="${film.videoUrl}" type="video/mp4">
+                        Your browser does not support HTML video playback.
+                    </video>
+                `;
+            }
+
             modal.classList.remove('hidden');
-            player.play().catch(e => console.log('Autoplay handled by user gesture requirement:', e));
         }
+        window.openVideoModal = openVideoModal;
 
         function closeVideoModal() {
             const modal = document.getElementById('video-modal');
-            const player = document.getElementById('modal-player');
-            player.pause();
-            player.src = '';
+            const container = document.getElementById('player-container');
+            container.innerHTML = '';
             modal.classList.add('hidden');
+            currentPlayingFilmId = null;
         }
+        window.closeVideoModal = closeVideoModal;
 
         /* =========================================================================
-           8. TOAST NOTIFICATION HELPERS
+           4. ACCOUNT, PROFILE & DROPDOWN MENU HANDLERS
            ========================================================================= */
-        function showToast(message, type = 'info') {
-            const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
-            
-            let icon = 'fa-circle-info text-blue-400';
-            if (type === 'success') icon = 'fa-circle-check text-emerald-400';
-            if (type === 'error') icon = 'fa-triangle-exclamation text-brand-500';
+        function toggleAccountMenu() {
+            const menu = document.getElementById('account-menu');
+            const notifDropdown = document.getElementById('notification-dropdown');
+            if (notifDropdown) notifDropdown.classList.add('hidden');
+            if (menu) menu.classList.toggle('hidden');
+        }
+        window.toggleAccountMenu = toggleAccountMenu;
 
-            toast.className = `pointer-events-auto flex items-center space-x-3 bg-neutral-900 border border-neutral-800 text-neutral-100 px-4 py-3 rounded-xl shadow-2xl transform transition-all duration-300 translate-y-4 opacity-0`;
-            toast.innerHTML = `
-                <i class="fa-solid ${icon} text-base"></i>
-                <span class="text-xs font-semibold">${message}</span>
-            `;
+        function toggleNotificationDropdown() {
+            const notifDropdown = document.getElementById('notification-dropdown');
+            const menu = document.getElementById('account-menu');
+            if (menu) menu.classList.add('hidden');
+            if (notifDropdown) {
+                notifDropdown.classList.toggle('hidden');
+                if (!notifDropdown.classList.contains('hidden')) {
+                    unreadNotifCount = 0;
+                    updateUnreadBadge();
+                }
+            }
+        }
+        window.toggleNotificationDropdown = toggleNotificationDropdown;
+
+        function selectProfile(profileType) {
+            activeProfile = profileType;
+            const profileDisplay = document.getElementById('user-profile-type');
+            const checkAdult = document.getElementById('check-adult-profile');
+            const checkKids = document.getElementById('check-kids-profile');
+
+            if (profileDisplay) profileDisplay.textContent = `${profileType} Profile`;
+
+            if (profileType === 'Adult') {
+                if (checkAdult) checkAdult.classList.remove('hidden');
+                if (checkKids) checkKids.classList.add('hidden');
+            } else {
+                if (checkAdult) checkAdult.classList.add('hidden');
+                if (checkKids) checkKids.classList.remove('hidden');
+            }
+
+            const accountMenu = document.getElementById('account-menu');
+            if (accountMenu) accountMenu.classList.add('hidden');
+
+            showToast(`Switched to ${profileType} Profile`, "info");
+            renderCatalog();
+        }
+        window.selectProfile = selectProfile;
+
+        /* =========================================================================
+           5. AUTH MODAL & SYNCHRONIZED POPUP LOGIC
+           ========================================================================= */
+        function openAuthModal() {
+            const modal = document.getElementById('auth-modal');
+            const accountMenu = document.getElementById('account-menu');
+            if (accountMenu) accountMenu.classList.add('hidden');
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            }
+        }
+        window.openAuthModal = openAuthModal;
+
+        function closeAuthModal() {
+            const modal = document.getElementById('auth-modal');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+        }
+        window.closeAuthModal = closeAuthModal;
+
+        function toggleAuthMode() {
+            isAuthSignUpMode = !isAuthSignUpMode;
+            const submitBtn = document.getElementById('auth-submit-btn');
+            const toggleBtn = document.getElementById('auth-toggle-mode-btn');
+            const title = document.getElementById('auth-modal-title');
+            const subtitle = document.getElementById('auth-modal-subtitle');
+            const usernameWrapper = document.getElementById('username-field-wrapper');
+            const identifierLabel = document.getElementById('auth-identifier-label');
+
+            if (isAuthSignUpMode) {
+                if (submitBtn) submitBtn.textContent = "Create Account";
+                if (toggleBtn) toggleBtn.textContent = "Already have an account? Sign In";
+                if (title) title.textContent = "Create Hippo Pippo Account";
+                if (subtitle) subtitle.textContent = "Register to sync catalog additions & preferences across all browsers.";
+                if (usernameWrapper) usernameWrapper.classList.remove('hidden');
+                if (identifierLabel) identifierLabel.textContent = "Email Address *";
+            } else {
+                if (submitBtn) submitBtn.textContent = "Sign In";
+                if (toggleBtn) toggleBtn.textContent = "Need an account? Sign Up";
+                if (title) title.textContent = "Hippo Pippo Account Sync";
+                if (subtitle) subtitle.textContent = "Sign in to automatically sync your watch progress across all devices.";
+                if (usernameWrapper) usernameWrapper.classList.add('hidden');
+                if (identifierLabel) identifierLabel.textContent = "Email Address or Username";
+            }
+        }
+        window.toggleAuthMode = toggleAuthMode;
+
+        async function handleAuthSubmit(event) {
+            event.preventDefault();
+            const identifierInput = document.getElementById('auth-email');
+            const usernameInput = document.getElementById('auth-username');
+            const passwordInput = document.getElementById('auth-password');
+
+            const identifier = identifierInput ? identifierInput.value.trim() : '';
+            const usernameVal = usernameInput ? usernameInput.value.trim() : '';
+            const password = passwordInput ? passwordInput.value : '';
+
+            if (!identifier || !password) {
+                showToast("Please enter your login details", "error");
+                return;
+            }
+
+            // Check if logging in as Verified Admin (Eadams / Floof2020)
+            if (!isAuthSignUpMode && (identifier.toLowerCase() === VERIFIED_ADMIN.username.toLowerCase() || identifier.toLowerCase() === VERIFIED_ADMIN.email.toLowerCase())) {
+                if (password === VERIFIED_ADMIN.password) {
+                    currentUser = {
+                        username: VERIFIED_ADMIN.username,
+                        email: VERIFIED_ADMIN.email,
+                        uid: 'admin-eadams',
+                        role: VERIFIED_ADMIN.role,
+                        isAdmin: true
+                    };
+                    localStorage.setItem('hippo_auth_user', JSON.stringify(currentUser));
+                    updateUserUI();
+                    closeAuthModal();
+                    showAccountSyncedModal(`${VERIFIED_ADMIN.username} (${VERIFIED_ADMIN.role})`);
+                    showToast("Logged in as Verified Admin!", "success");
+                    return;
+                } else {
+                    showToast("Incorrect password for Admin account Eadams", "error");
+                    return;
+                }
+            }
+
+            if (isAuthSignUpMode && !usernameVal) {
+                showToast("Please enter a username for registration", "error");
+                return;
+            }
+
+            if (!auth) {
+                // Persistent authentication state fallback
+                const userEmail = identifier.includes('@') ? identifier : `${identifier}@hippopippo.com`;
+                const displayUser = isAuthSignUpMode ? usernameVal : (identifier.includes('@') ? identifier.split('@')[0] : identifier);
+                
+                currentUser = { 
+                    username: displayUser,
+                    email: userEmail, 
+                    uid: 'usr-' + Date.now(), 
+                    role: 'Standard User',
+                    isAdmin: false 
+                };
+                localStorage.setItem('hippo_auth_user', JSON.stringify(currentUser));
+                updateUserUI();
+                closeAuthModal();
+                showAccountSyncedModal(`${currentUser.username} (${currentUser.email})`);
+                return;
+            }
+
+            try {
+                if (isAuthSignUpMode) {
+                    const res = await window.FirebaseSDK.createUserWithEmailAndPassword(auth, identifier, password);
+                    currentUser = { username: usernameVal, email: res.user.email, uid: res.user.uid, role: 'Standard User', isAdmin: false };
+                } else {
+                    const res = await window.FirebaseSDK.signInWithEmailAndPassword(auth, identifier, password);
+                    currentUser = { username: identifier.split('@')[0], email: res.user.email, uid: res.user.uid, role: 'Standard User', isAdmin: false };
+                }
+                localStorage.setItem('hippo_auth_user', JSON.stringify(currentUser));
+                updateUserUI();
+                closeAuthModal();
+                showAccountSyncedModal(currentUser.username);
+            } catch (err) {
+                showToast(err.message, "error");
+            }
+        }
+        window.handleAuthSubmit = handleAuthSubmit;
+
+        function showAccountSyncedModal(displayLabel) {
+            const modal = document.getElementById('account-synced-modal');
+            const emailSlot = document.getElementById('synced-modal-email');
+            const profileSlot = document.getElementById('synced-modal-profile');
+            
+            if (emailSlot) emailSlot.textContent = displayLabel;
+            if (profileSlot) profileSlot.textContent = `${activeProfile} Profile (${currentUser?.role || 'Standard'})`;
+            
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            }
+        }
+        window.showAccountSyncedModal = showAccountSyncedModal;
+
+        function closeAccountSyncedModal() {
+            const modal = document.getElementById('account-synced-modal');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+        }
+        window.closeAccountSyncedModal = closeAccountSyncedModal;
+
+        function updateUserUI() {
+            const nameDisplay = document.getElementById('user-name-display');
+            const menuEmail = document.getElementById('menu-user-email');
+            const roleBadge = document.getElementById('menu-user-role-badge');
+            const avatarBadge = document.getElementById('user-avatar-badge');
+            const authBtnLabel = document.getElementById('auth-btn-label');
+
+            if (currentUser) {
+                const displayName = currentUser.username || currentUser.email.split('@')[0];
+                if (nameDisplay) nameDisplay.textContent = displayName;
+                if (menuEmail) menuEmail.textContent = `${displayName} (${currentUser.email})`;
+                if (avatarBadge) {
+                    avatarBadge.textContent = displayName.charAt(0).toUpperCase();
+                    if (currentUser.isAdmin) {
+                        avatarBadge.className = "w-7 h-7 rounded-lg bg-gradient-to-tr from-amber-500 to-yellow-300 text-neutral-950 font-black text-xs shadow-md flex items-center justify-center";
+                    } else {
+                        avatarBadge.className = "w-7 h-7 rounded-lg bg-gradient-to-tr from-brand-600 to-amber-500 flex items-center justify-center font-bold text-xs text-white shadow";
+                    }
+                }
+
+                if (roleBadge) {
+                    if (currentUser.isAdmin) {
+                        roleBadge.textContent = "Verified Admin ⭐";
+                        roleBadge.className = "mt-1 inline-block text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40";
+                    } else {
+                        roleBadge.textContent = "Standard User";
+                        roleBadge.className = "mt-1 inline-block text-[10px] font-bold px-2 py-0.5 rounded bg-neutral-800 text-neutral-400 border border-neutral-700";
+                    }
+                }
+
+                if (authBtnLabel) authBtnLabel.textContent = "Switch Account / Sign Out";
+            } else {
+                if (nameDisplay) nameDisplay.textContent = "Not Signed In";
+                if (menuEmail) menuEmail.textContent = "No Active Account";
+                if (roleBadge) {
+                    roleBadge.textContent = "Account Required";
+                    roleBadge.className = "mt-1 inline-block text-[10px] font-bold px-2 py-0.5 rounded bg-neutral-800 text-neutral-400 border border-neutral-700";
+                }
+                if (avatarBadge) avatarBadge.textContent = "?";
+                if (authBtnLabel) authBtnLabel.textContent = "Sign In / Create Account";
+            }
+        }
+        window.updateUserUI = updateUserUI;
+
+        /* =========================================================================
+           6. MEDIA EXTRACTION, FILE SELECTION & YOUTUBE URL HANDLING
+           ========================================================================= */
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            selectedFileBlob = file;
+            customYoutubeId = null;
+
+            document.getElementById('file-name-text').textContent = file.name;
+            document.getElementById('file-size-text').textContent = `(${(file.size / (1024 * 1024)).toFixed(1)} MB)`;
+            document.getElementById('file-details-badge').classList.remove('hidden');
+
+            document.getElementById('meta-title').value = file.name.replace(/\.[^/.]+$/, "");
+
+            const fileUrl = URL.createObjectURL(file);
+            const extractor = document.getElementById('hidden-video-extractor');
+            extractor.src = fileUrl;
+
+            extractor.onloadedmetadata = () => {
+                const durSec = Math.floor(extractor.duration);
+                const mins = Math.floor(durSec / 60);
+                const secs = durSec % 60;
+                extractedDurationStr = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+                document.getElementById('meta-duration').value = extractedDurationStr;
+
+                extractor.currentTime = Math.min(2, extractor.duration / 2);
+            };
+
+            extractor.onseeked = () => {
+                const canvas = document.getElementById('thumbnail-canvas');
+                canvas.width = 600;
+                canvas.height = 338;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(extractor, 0, 0, canvas.width, canvas.height);
+                generatedThumbnailUrl = canvas.toDataURL('image/jpeg', 0.85);
+                document.getElementById('meta-thumb-preview').src = generatedThumbnailUrl;
+            };
+        }
+        window.handleFileSelect = handleFileSelect;
+
+        function loadYouTubeMetadata() {
+            const input = document.getElementById('youtube-url-input').value.trim();
+            if (!input) {
+                showToast("Please enter a YouTube link or video ID", "error");
+                return;
+            }
+
+            let ytId = input;
+            const match = input.match(/(?:embed\/|v\/|watch\?v=|youtu\.be\/)([^#\&\?]*)/);
+            if (match && match[1]) ytId = match[1];
+
+            customYoutubeId = ytId;
+            selectedFileBlob = null;
+            generatedThumbnailUrl = `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
+
+            document.getElementById('meta-title').value = document.getElementById('meta-title').value || `YouTube Video (${ytId})`;
+            document.getElementById('meta-duration').value = "YouTube Stream";
+            document.getElementById('meta-thumb-preview').src = generatedThumbnailUrl;
+            
+            showToast("Fetched YouTube video details", "success");
+        }
+        window.loadYouTubeMetadata = loadYouTubeMetadata;
+
+        async function publishNewFilm(event) {
+            event.preventDefault();
+
+            const title = document.getElementById('meta-title').value.trim();
+            const genre = document.getElementById('meta-genre').value;
+            const duration = document.getElementById('meta-duration').value || 'Unknown';
+            const desc = document.getElementById('meta-desc').value.trim() || 'No description provided.';
+
+            if (!title) {
+                showToast("Please provide a film title", "error");
+                return;
+            }
+
+            let newFilm = {
+                id: 'film-' + Date.now(),
+                title,
+                genre,
+                duration,
+                desc,
+                thumbnail: generatedThumbnailUrl || 'https://placehold.co/600x400/18181b/ffffff?text=Video+Stream',
+                timestamp: Date.now()
+            };
+
+            if (customYoutubeId) {
+                newFilm.youtubeId = customYoutubeId;
+                newFilm.videoUrl = `https://www.youtube.com/embed/${customYoutubeId}?autoplay=1`;
+                newFilm.sourceType = 'YouTube Stream';
+            } else if (selectedFileBlob) {
+                newFilm.videoUrl = URL.createObjectURL(selectedFileBlob);
+                newFilm.sourceType = 'Uploaded Local File';
+            } else {
+                newFilm.videoUrl = 'https://www.w3schools.com/html/mov_bbb.mp4';
+                newFilm.sourceType = 'Sample Stream';
+            }
+
+            if (db && isFirebaseActive) {
+                try {
+                    await window.FirebaseSDK.addDoc(window.FirebaseSDK.collection(db, "catalogs"), newFilm);
+                    showToast("Film published and synced to cloud!", "success");
+                } catch (err) {
+                    showToast("Local sync fallback: " + err.message, "info");
+                    saveLocalCatalog(newFilm);
+                }
+            } else {
+                saveLocalCatalog(newFilm);
+            }
+
+            document.getElementById('upload-form').reset();
+            document.getElementById('file-details-badge').classList.add('hidden');
+            document.getElementById('meta-thumb-preview').src = 'https://placehold.co/600x400/18181b/ffffff?text=No+Thumbnail+Generated';
+            selectedFileBlob = null;
+            customYoutubeId = null;
+
+            switchTab('catalog');
+        }
+        window.publishNewFilm = publishNewFilm;
+
+        function saveLocalCatalog(film) {
+            filmCatalog.unshift(film);
+            localStorage.setItem('hippo_catalog', JSON.stringify(filmCatalog));
+            if (broadcastChannel) {
+                broadcastChannel.postMessage({ type: 'CATALOG_UPDATE', data: filmCatalog });
+            }
+            updateCatalogViews();
+            showToast("New film added to local sync catalog!", "success");
+        }
+        window.saveLocalCatalog = saveLocalCatalog;
+
+        /* =========================================================================
+           7. BROADCAST ANNOUNCEMENTS & TOAST NOTIFICATIONS
+           ========================================================================= */
+        async function sendGlobalBroadcast(event) {
+            event.preventDefault();
+            const input = document.getElementById('broadcast-message-input');
+            const message = input ? input.value.trim() : '';
+            if (!message) return;
+
+            const notif = {
+                id: 'notif-' + Date.now(),
+                message,
+                timestamp: new Date().toLocaleTimeString()
+            };
+
+            if (broadcastChannel) {
+                broadcastChannel.postMessage({ type: 'NEW_NOTIFICATION', data: notif });
+            }
+
+            if (db && isFirebaseActive) {
+                try {
+                    await window.FirebaseSDK.addDoc(window.FirebaseSDK.collection(db, "notifications"), notif);
+                } catch (err) {
+                    addNotificationToState(notif, true);
+                }
+            } else {
+                addNotificationToState(notif, true);
+            }
+
+            if (input) input.value = '';
+            showToast("Broadcast message dispatched globally!", "success");
+        }
+        window.sendGlobalBroadcast = sendGlobalBroadcast;
+
+        function addNotificationToState(notif, shouldNotify = true) {
+            broadcastNotifications.unshift(notif);
+            unreadNotifCount++;
+            updateUnreadBadge();
+            renderNotifications();
+            if (shouldNotify) {
+                showToast(notif.message, "info");
+            }
+        }
+        window.addNotificationToState = addNotificationToState;
+
+        function updateUnreadBadge() {
+            const badge = document.getElementById('unread-notif-badge');
+            const countText = document.getElementById('notif-count-text');
+            if (badge) {
+                if (unreadNotifCount > 0) {
+                    badge.textContent = unreadNotifCount;
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                }
+            }
+            if (countText) countText.textContent = `${broadcastNotifications.length} messages`;
+        }
+        window.updateUnreadBadge = updateUnreadBadge;
+
+        function renderNotifications() {
+            const list = document.getElementById('notification-list');
+            if (!list) return;
+
+            if (broadcastNotifications.length === 0) {
+                list.innerHTML = `<div class="text-center py-6 text-xs text-neutral-500">No broadcast announcements yet.</div>`;
+                return;
+            }
+
+            list.innerHTML = broadcastNotifications.map(n => `
+                <div class="p-2.5 bg-neutral-950 border border-neutral-800 rounded-xl space-y-1">
+                    <div class="flex items-center justify-between text-[10px] text-neutral-400">
+                        <span class="font-bold text-brand-400"><i class="fa-solid fa-bullhorn"></i> Announcement</span>
+                        <span>${n.timestamp}</span>
+                    </div>
+                    <p class="text-xs text-neutral-200 leading-normal">${n.message}</p>
+                </div>
+            `).join('');
+        }
+        window.renderNotifications = renderNotifications;
+
+        function showToast(message, type = "info") {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+
+            const toast = document.createElement('div');
+            const bgClass = type === "error" ? "bg-red-950 border-red-800 text-red-200" :
+                            type === "success" ? "bg-emerald-950 border-emerald-800 text-emerald-200" :
+                            "bg-neutral-900 border-neutral-700 text-neutral-100";
+
+            toast.className = `pointer-events-auto px-4 py-3 rounded-xl border text-xs font-medium shadow-2xl transition-all duration-300 flex items-center gap-2 ${bgClass}`;
+            toast.innerHTML = `<i class="fa-solid fa-circle-info"></i> <span>${message}</span>`;
 
             container.appendChild(toast);
-
-            // Animate in
-            requestAnimationFrame(() => {
-                toast.classList.remove('translate-y-4', 'opacity-0');
-            });
-
-            // Remove after 3.5 seconds
             setTimeout(() => {
                 toast.classList.add('opacity-0', 'translate-y-2');
                 setTimeout(() => toast.remove(), 300);
             }, 3500);
         }
+        window.showToast = showToast;
+
+        /* =========================================================================
+           8. DEMO SEED & CATALOG MANAGEMENT
+           ========================================================================= */
+        function triggerSampleSeed() {
+            filmCatalog = [...SAMPLE_MOVIES];
+            localStorage.setItem('hippo_catalog', JSON.stringify(filmCatalog));
+            if (broadcastChannel) {
+                broadcastChannel.postMessage({ type: 'CATALOG_UPDATE', data: filmCatalog });
+            }
+            updateCatalogViews();
+            showToast("Demo YouTube movie library loaded!", "success");
+        }
+        window.triggerSampleSeed = triggerSampleSeed;
+
+        function clearAllFilms() {
+            filmCatalog = [];
+            localStorage.removeItem('hippo_catalog');
+            if (broadcastChannel) {
+                broadcastChannel.postMessage({ type: 'CATALOG_UPDATE', data: filmCatalog });
+            }
+            updateCatalogViews();
+            showToast("Catalog cleared", "info");
+        }
+        window.clearAllFilms = clearAllFilms;
+
+        function renderAdminTable() {
+            // Admin management table view renderer
+        }
+        window.renderAdminTable = renderAdminTable;
+
+        /* =========================================================================
+           9. APP INITIALIZATION & FIREBASE LISTENERS
+           ========================================================================= */
+        window.addEventListener('DOMContentLoaded', () => {
+            // Restore persistent auth user if signed in locally
+            const savedUser = localStorage.getItem('hippo_auth_user');
+            if (savedUser) {
+                try {
+                    currentUser = JSON.parse(savedUser);
+                    updateUserUI();
+                } catch(e) {}
+            }
+
+            // Load persistent local catalog if available
+            const saved = localStorage.getItem('hippo_catalog');
+            if (saved) {
+                try {
+                    filmCatalog = JSON.parse(saved);
+                } catch (e) {
+                    filmCatalog = [...SAMPLE_MOVIES];
+                }
+            } else {
+                filmCatalog = [...SAMPLE_MOVIES];
+            }
+
+            updateCatalogViews();
+
+            // Prompt for account authentication if no active user session exists
+            if (!currentUser) {
+                setTimeout(() => openAuthModal(), 500);
+            }
+        });
     </script>
 </body>
 </html>
