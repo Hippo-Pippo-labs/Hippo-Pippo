@@ -1,1433 +1,1367 @@
 <!DOCTYPE html>
-<html lang="en" class="h-full bg-neutral-950 text-neutral-100">
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hippo Pippo - Cloud Video Sync & Content Studio</title>
-    
-    <!-- Tailwind CSS CDN -->
+    <title>Hippo Pippo - Stream Unlimited Movies & Shows</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
     <script>
         tailwind.config = {
+            darkMode: 'class',
             theme: {
                 extend: {
                     colors: {
                         brand: {
-                            500: '#E50914',
-                            600: '#B80710',
-                            700: '#8C040B',
+                            50: '#fff1f2',
+                            100: '#ffe4e6',
+                            500: '#f43f5e',
+                            600: '#e11d48',
+                            700: '#be123c',
+                            900: '#881337',
+                            gold: '#fbbf24'
                         },
-                        hippo: {
-                            card: '#18181b',
-                            panel: '#27272a',
-                            border: '#3f3f46'
+                        dark: {
+                            950: '#090a0f',
+                            900: '#0f111a',
+                            800: '#181b28',
+                            700: '#232738',
+                            600: '#32374e'
                         }
                     },
                     fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
                     }
                 }
             }
         }
     </script>
-
-    <!-- FontAwesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Inter Font -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-
-    <!-- Firebase SDK Modular Import -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, addDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        window.FirebaseSDK = {
-            initializeApp,
-            getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut,
-            getFirestore, doc, setDoc, getDoc, onSnapshot, collection, addDoc, updateDoc, deleteDoc
-        };
-    </script>
-
     <style>
-        /* Custom scrollbar styling for slick dark theme */
+        /* Custom scrollbars */
         ::-webkit-scrollbar {
             width: 8px;
             height: 8px;
         }
         ::-webkit-scrollbar-track {
-            background: #09090b;
+            background: #090a0f;
         }
         ::-webkit-scrollbar-thumb {
-            background: #27272a;
+            background: #232738;
             border-radius: 4px;
         }
         ::-webkit-scrollbar-thumb:hover {
-            background: #3f3f46;
+            background: #e11d48;
         }
-        
-        .backdrop-blur-custom {
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
         }
-
-        .pulse-glow {
-            animation: pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
         }
-        @keyframes pulse-glow {
-            0%, 100% { opacity: 1; box-shadow: 0 0 15px rgba(229, 9, 20, 0.4); }
-            50% { opacity: 0.6; box-shadow: 0 0 5px rgba(229, 9, 20, 0.1); }
+        .hero-gradient {
+            background: linear-gradient(180deg, rgba(9,10,15,0.2) 0%, rgba(9,10,15,0.7) 60%, rgba(9,10,15,1) 100%),
+                        linear-gradient(90deg, rgba(9,10,15,0.95) 0%, rgba(9,10,15,0.5) 50%, rgba(9,10,15,0) 100%);
+        }
+        .card-glow:hover {
+            box-shadow: 0 0 25px rgba(225, 29, 72, 0.35);
+        }
+        @keyframes pulse-subtle {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        .animate-pulse-subtle {
+            animation: pulse-subtle 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
         }
     </style>
 </head>
-<body class="h-full font-sans antialiased bg-neutral-950 text-neutral-100 flex flex-col min-h-screen selection:bg-brand-500 selection:text-white">
+<body class="bg-dark-950 text-slate-100 font-sans min-h-screen selection:bg-brand-600 selection:text-white flex flex-col">
 
-    <!-- TOP GLOBAL NAVIGATION BAR -->
-    <header class="sticky top-0 z-40 w-full border-b border-neutral-800 bg-neutral-950/90 backdrop-blur-custom px-4 lg:px-8 py-3.5 flex items-center justify-between transition-all">
-        <div class="flex items-center space-x-6">
+    <!-- APP WRAPPER -->
+    <div id="app" class="relative flex-grow flex flex-col">
+
+        <!-- NAVBAR -->
+        <nav id="navbar" class="fixed top-0 left-0 right-0 z-40 transition-all duration-300 bg-gradient-to-b from-dark-950/90 to-transparent backdrop-blur-md border-b border-white/5 px-4 md:px-8 py-3.5 flex items-center justify-between">
             <!-- Brand Logo -->
-            <a href="#" class="flex items-center space-x-2 text-2xl font-black tracking-wider text-brand-500 hover:text-brand-600 transition">
-                <i class="fa-solid fa-hippo text-3xl"></i>
-                <span class="bg-gradient-to-r from-brand-500 to-red-400 bg-clip-text text-transparent">HIPPO PIPPO</span>
-                <span class="text-xs font-semibold uppercase tracking-widest px-2 py-0.5 rounded bg-neutral-800 text-neutral-300 border border-neutral-700 ml-1">SYNC STUDIO</span>
-            </a>
-
-            <!-- Mode Toggles (Viewer / Creator Admin) -->
-            <nav class="hidden md:flex items-center space-x-1 bg-neutral-900 p-1 rounded-xl border border-neutral-800">
-                <button id="nav-catalog-btn" onclick="switchTab('catalog')" class="px-4 py-1.5 rounded-lg text-sm font-medium transition-all bg-brand-500 text-white shadow-lg">
-                    <i class="fa-solid fa-film mr-2"></i> Catalog Viewer
-                </button>
-                <!-- Admin Only Navigation Button: Strictly hidden unless logged in as Admin Eadams -->
-                <button id="nav-admin-btn" onclick="switchTab('admin')" class="hidden px-4 py-1.5 rounded-lg text-sm font-medium text-neutral-400 hover:text-white hover:bg-neutral-800 transition-all">
-                    <i class="fa-solid fa-shield-halved mr-2 text-amber-400"></i> Creator & Sync Admin
-                </button>
-            </nav>
-        </div>
-
-        <!-- Sync Indicator, Notification Center & Account Controls -->
-        <div class="flex items-center space-x-4">
-            <!-- Live Real-Time Connection Indicator -->
-            <div id="sync-badge" class="hidden sm:flex items-center space-x-2 px-3 py-1.5 rounded-full bg-emerald-950/80 border border-emerald-600/40 text-emerald-400 text-xs font-semibold shadow-inner">
-                <span class="relative flex h-2.5 w-2.5">
-                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                  <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-                </span>
-                <span id="sync-status-text">Global Sync Active</span>
-            </div>
-
-            <!-- Global Live Notification Broadcast Bell -->
-            <div class="relative">
-                <button id="notification-bell-btn" onclick="toggleNotificationDropdown()" class="relative p-2.5 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-300 hover:text-white hover:bg-neutral-800 transition">
-                    <i class="fa-solid fa-bell text-base"></i>
-                    <span id="unread-notif-badge" class="hidden absolute -top-1 -right-1 w-5 h-5 bg-brand-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center animate-bounce shadow">0</span>
-                </button>
-
-                <!-- Notifications Dropdown Box -->
-                <div id="notification-dropdown" class="hidden absolute right-0 mt-3 w-80 sm:w-96 bg-neutral-900 border border-neutral-800 rounded-2xl shadow-2xl z-50 p-4 space-y-3">
-                    <div class="flex items-center justify-between border-b border-neutral-800 pb-2">
-                        <h4 class="text-xs font-bold uppercase tracking-wider text-neutral-300 flex items-center gap-2">
-                            <i class="fa-solid fa-tower-cell text-brand-500"></i> Global Live Announcements
-                        </h4>
-                        <span id="notif-count-text" class="text-[10px] text-neutral-500">0 messages</span>
+            <div class="flex items-center space-x-8">
+                <a href="#" onclick="showHome()" class="flex items-center space-x-2.5 group">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-700 via-brand-600 to-amber-500 flex items-center justify-center shadow-lg shadow-brand-600/30 group-hover:scale-105 transition-transform duration-300">
+                        <i class="fa-solid fa-hippo text-white text-xl"></i>
                     </div>
-                    <div id="notification-list" class="max-h-64 overflow-y-auto space-y-2 pr-1">
-                        <div class="text-center py-6 text-xs text-neutral-500">No broadcast announcements yet.</div>
+                    <div class="flex flex-col">
+                        <span class="font-extrabold text-2xl tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-100 to-brand-500 font-sans leading-none">
+                            HIPPO<span class="text-brand-500">PIPPO</span>
+                        </span>
+                        <span class="text-[9px] tracking-widest text-brand-500 font-bold uppercase">Streaming Hub</span>
                     </div>
+                </a>
+
+                <!-- Navigation Links -->
+                <div class="hidden lg:flex items-center space-x-6 text-sm font-medium text-slate-300">
+                    <button onclick="filterCategory('All')" class="nav-link text-white font-semibold hover:text-brand-500 transition-colors">Home</button>
+                    <button onclick="filterCategory('Originals')" class="nav-link hover:text-brand-500 transition-colors">Hippo Originals</button>
+                    <button onclick="filterCategory('Movies')" class="nav-link hover:text-brand-500 transition-colors">Movies</button>
+                    <button onclick="filterCategory('Shows')" class="nav-link hover:text-brand-500 transition-colors">TV Shows</button>
+                    <button onclick="filterCategory('Trending')" class="nav-link hover:text-brand-500 transition-colors">Trending Now</button>
+                    <button onclick="toggleMyListOnly()" id="my-list-nav-btn" class="nav-link hover:text-brand-500 transition-colors flex items-center space-x-1">
+                        <i class="fa-solid fa-bookmark text-xs text-brand-500"></i>
+                        <span>My Favorites</span>
+                    </button>
                 </div>
             </div>
 
-            <!-- Account Auth & Profile Dropdown -->
-            <div class="relative">
-                <button id="account-dropdown-btn" onclick="toggleAccountMenu()" class="flex items-center space-x-2.5 bg-neutral-900 border border-neutral-800 hover:border-neutral-700 px-3 py-1.5 rounded-xl transition">
-                    <div id="user-avatar-badge" class="w-7 h-7 rounded-lg bg-gradient-to-tr from-brand-600 to-amber-500 flex items-center justify-center font-bold text-xs text-white shadow">
-                        ?
-                    </div>
-                    <div class="hidden lg:block text-left">
-                        <div id="user-name-display" class="text-xs font-semibold text-neutral-200">Not Signed In</div>
-                        <div id="user-profile-type" class="text-[10px] text-neutral-400">Account Required</div>
-                    </div>
-                    <i class="fa-solid fa-chevron-down text-neutral-500 text-[10px] ml-1"></i>
-                </button>
+            <!-- Header Controls & Search -->
+            <div class="flex items-center space-x-3 md:space-x-4">
+                <!-- Search Box -->
+                <div class="relative flex items-center">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 text-slate-400 text-sm"></i>
+                    <input type="text" id="search-input" placeholder="Search title, genre, cast..." 
+                           class="w-36 md:w-64 bg-dark-900/90 text-slate-200 text-xs md:text-sm pl-9 pr-8 py-2 rounded-full border border-slate-700/60 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all placeholder-slate-500"
+                           oninput="handleSearch(this.value)">
+                    <button id="clear-search-btn" onclick="clearSearch()" class="hidden absolute right-3 text-slate-400 hover:text-white text-xs">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
 
-                <!-- Account Settings & Switching Dropdown Menu -->
-                <div id="account-menu" class="hidden absolute right-0 mt-3 w-64 bg-neutral-900 border border-neutral-800 rounded-2xl shadow-2xl z-50 p-3 space-y-2">
-                    <div class="p-2 border-b border-neutral-800">
-                        <p class="text-xs text-neutral-400">Signed in as:</p>
-                        <p id="menu-user-email" class="text-xs font-mono text-neutral-200 truncate">No Active Account</p>
-                        <div id="menu-user-role-badge" class="mt-1 inline-block text-[10px] font-bold px-2 py-0.5 rounded bg-neutral-800 text-neutral-400 border border-neutral-700">Standard User</div>
-                    </div>
+                <!-- Admin Suite Trigger (Strictly visible ONLY for Logged-In Admins/Co-Admins) -->
+        <button onclick="toggleAdminPanel()" id="admin-badge-btn" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all duration-300 bg-slate-800/80 border-slate-700 text-slate-300 hover:border-brand-500 hover:text-white">
+            <i class="fa-solid fa-shield-halved text-brand-500"></i>
+            <span class="hidden sm:inline" id="admin-btn-label">Admin Studio</span>
+        </button>
 
-                    <!-- Profile Switcher Section -->
-                    <div class="space-y-1 py-1">
-                        <div class="text-[10px] uppercase font-bold tracking-wider text-neutral-500 px-2">Active Profile</div>
-                        <button onclick="selectProfile('Adult')" class="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-neutral-200 hover:bg-neutral-800 flex items-center justify-between">
-                            <span class="flex items-center gap-2"><i class="fa-solid fa-user text-brand-400"></i> Adult Profile</span>
-                            <i id="check-adult-profile" class="fa-solid fa-check text-brand-500 text-xs"></i>
-                        </button>
-                        <button onclick="selectProfile('Kids')" class="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium text-neutral-200 hover:bg-neutral-800 flex items-center justify-between">
-                            <span class="flex items-center gap-2"><i class="fa-solid fa-child text-amber-400"></i> Kids Profile</span>
-                            <i id="check-kids-profile" class="fa-solid fa-check text-brand-500 text-xs hidden"></i>
-                        </button>
-                    </div>
+        <!-- Profile & Login Dropdown -->
+                <div class="relative">
+                    <button onclick="toggleProfileMenu()" class="flex items-center space-x-2 focus:outline-none group">
+                        <div id="profile-avatar" class="w-9 h-9 rounded-full bg-gradient-to-br from-brand-600 to-indigo-600 flex items-center justify-center font-bold text-white text-sm shadow-md ring-2 ring-brand-500/50 group-hover:ring-brand-500 transition-all">
+                            A
+                        </div>
+                        <i class="fa-solid fa-chevron-down text-slate-400 text-xs group-hover:text-white transition-colors"></i>
+                    </button>
+                    <!-- Menu -->
+                    <div id="profile-dropdown" class="hidden absolute right-0 mt-3 w-64 bg-dark-900 border border-slate-800 rounded-2xl shadow-2xl py-2 z-50 backdrop-blur-xl">
+                        <div class="px-4 py-3 border-b border-slate-800/80 flex items-center justify-between">
+                            <div>
+                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Logged In As</p>
+                                <p id="current-user-display" class="text-sm font-bold text-white truncate">Admin Master</p>
+                            </div>
+                            <span id="user-role-badge" class="text-[10px] font-bold px-2 py-0.5 rounded bg-brand-600/30 text-brand-400 border border-brand-500/30">
+                                ADMIN
+                            </span>
+                        </div>
+                        
+                        <div class="py-1">
+                            <p class="px-4 py-1.5 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Quick Switch Account</p>
+                            <button onclick="switchProfile('Admin Master', 'A', 'admin')" class="w-full text-left px-4 py-2 text-xs font-medium text-slate-300 hover:bg-slate-800/80 hover:text-white flex items-center justify-between">
+                                <span class="flex items-center"><i class="fa-solid fa-user-shield text-brand-500 mr-2.5"></i> Admin Master</span>
+                                <span class="text-[10px] bg-brand-600/30 text-brand-400 px-1.5 py-0.5 rounded font-semibold">Admin</span>
+                            </button>
+                            <button onclick="switchProfile('Daniel (Co-Admin)', 'D', 'coadmin')" class="w-full text-left px-4 py-2 text-xs font-medium text-slate-300 hover:bg-slate-800/80 hover:text-white flex items-center justify-between">
+                                <span class="flex items-center"><i class="fa-solid fa-user-gear text-amber-400 mr-2.5"></i> Daniel (Co-Admin)</span>
+                                <span class="text-[10px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded font-semibold">Co-Admin</span>
+                            </button>
+                            <button onclick="switchProfile('Family Room', 'F', 'viewer')" class="w-full text-left px-4 py-2 text-xs font-medium text-slate-300 hover:bg-slate-800/80 hover:text-white flex items-center justify-between">
+                                <span class="flex items-center"><i class="fa-solid fa-house text-emerald-400 mr-2.5"></i> Family Room</span>
+                                <span class="text-[10px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded">Viewer</span>
+                            </button>
+                            <button onclick="switchProfile('Guest Viewer', 'G', 'viewer')" class="w-full text-left px-4 py-2 text-xs font-medium text-slate-300 hover:bg-slate-800/80 hover:text-white flex items-center justify-between">
+                                <span class="flex items-center"><i class="fa-solid fa-user text-sky-400 mr-2.5"></i> Guest Viewer</span>
+                                <span class="text-[10px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded">Guest</span>
+                            </button>
+                        </div>
 
-                    <div class="border-t border-neutral-800 pt-2">
-                        <button id="auth-modal-trigger-btn" onclick="openAuthModal()" class="w-full px-3 py-2 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-semibold text-xs transition flex items-center justify-center space-x-2">
-                            <i class="fa-solid fa-right-to-bracket"></i>
-                            <span id="auth-btn-label">Sign In / Create Account</span>
-                        </button>
+                        <div class="border-t border-slate-800/80 pt-1 mt-1 px-4 py-2 space-y-2">
+                            <button onclick="openLoginModal()" class="w-full py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition-all flex items-center justify-center space-x-2 border border-slate-700">
+                                <i class="fa-solid fa-right-to-bracket text-brand-500"></i>
+                                <span>Sign In / Change Login</span>
+                            </button>
+                            <div class="flex items-center justify-between pt-1">
+                                <span class="text-xs text-slate-400">Subscription:</span>
+                                <span onclick="toggleSubscriptionStatus()" id="sub-status-badge" class="cursor-pointer text-[10px] font-bold px-2 py-0.5 rounded-full bg-brand-500/20 text-brand-400 border border-brand-500/30 hover:bg-brand-500 hover:text-white transition-all">
+                                    HIPPO PREMIUM
+                                </span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </header>
+        </nav>
 
-    <!-- MOBILE NAVIGATION (Sub-bar) -->
-    <div class="md:hidden flex bg-neutral-900 border-b border-neutral-800 p-2 justify-center space-x-2">
-        <button id="mobile-nav-catalog" onclick="switchTab('catalog')" class="flex-1 py-2 rounded-lg text-xs font-semibold bg-brand-500 text-white text-center">
-            <i class="fa-solid fa-film mr-1"></i> Catalog
-        </button>
-        <!-- Admin Only Mobile Navigation: Hidden unless logged in as Admin Eadams -->
-        <button id="mobile-nav-admin" onclick="switchTab('admin')" class="hidden flex-1 py-2 rounded-lg text-xs font-semibold text-neutral-400 bg-neutral-800 text-center">
-            <i class="fa-solid fa-shield-halved mr-1 text-amber-400"></i> Sync Admin
-        </button>
+        <!-- MAIN CONTENT LAYOUT -->
+        <main class="flex-grow pt-20 pb-16 px-4 md:px-8 max-w-7xl mx-auto w-full space-y-8">
+            <!-- Hero Showcase Banner -->
+            <div id="hero-banner" class="w-full"></div>
+
+            <!-- Active Filter Header (Hidden by default) -->
+            <div id="filter-active-header" class="hidden flex items-center justify-between pb-2 border-b border-slate-800">
+                <div class="flex items-center space-x-2">
+                    <span id="filter-title-text" class="text-base font-bold text-white">Filtered Videos</span>
+                    <span id="filter-count-badge" class="px-2 py-0.5 rounded-full bg-brand-600/30 text-brand-400 text-xs font-bold">0</span>
+                </div>
+                <button onclick="clearSearchAndFilters()" class="text-xs text-slate-400 hover:text-white flex items-center space-x-1">
+                    <i class="fa-solid fa-xmark"></i>
+                    <span>Clear Filter</span>
+                </button>
+            </div>
+
+            <!-- Video Categories / Results Container -->
+            <div id="categories-container" class="space-y-10"></div>
+        </main>
     </div>
 
-    <!-- MAIN APP CONTENT CONTAINERS -->
-    <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-8">
-
-        <!-- ========================================================================= -->
-        <!-- VIEW 1: CATALOG VIEWER (NETFLIX-STYLE STREAMING DASHBOARD) -->
-        <!-- ========================================================================= -->
-        <section id="view-catalog" class="space-y-6">
-            <!-- Hero Announcement Banner -->
-            <div class="relative rounded-2xl overflow-hidden bg-gradient-to-r from-neutral-900 via-neutral-900/90 to-brand-950/40 border border-neutral-800 p-6 sm:p-10 flex flex-col justify-end min-h-[260px] sm:min-h-[320px] shadow-2xl">
-                <div class="relative z-10 max-w-2xl space-y-3">
-                    <div class="inline-flex items-center space-x-2 px-2.5 py-1 rounded-full bg-brand-500/20 text-brand-400 border border-brand-500/30 text-xs font-bold uppercase tracking-wider">
-                        <i class="fa-solid fa-bolt"></i> Real-Time Broadcast Catalog
+    <!-- 1. ADMIN STUDIO MODAL -->
+    <div id="admin-modal" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-xl flex items-center justify-center p-4">
+        <div class="bg-dark-900 border border-slate-800 rounded-3xl w-full max-w-3xl shadow-2xl max-h-[90vh] flex flex-col overflow-hidden">
+            <!-- Modal Header -->
+            <div class="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-dark-950">
+                <div class="flex items-center space-x-3">
+                    <div class="w-9 h-9 rounded-xl bg-brand-600/20 text-brand-500 flex items-center justify-center">
+                        <i class="fa-solid fa-shield-halved text-lg"></i>
                     </div>
-                    <h1 class="text-3xl sm:text-5xl font-extrabold tracking-tight text-white leading-tight">
-                        Hippo Pippo Cinema Cloud
-                    </h1>
-                    <p class="text-sm sm:text-base text-neutral-300 font-normal leading-relaxed">
-                        Upload media files in the Creator Studio to automatically stream and sync video titles instantly across all open browser instances & devices.
-                    </p>
-                    <div class="pt-2 flex flex-wrap gap-3">
-                        <button onclick="handleHeroUploadClick()" class="px-5 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-semibold text-sm shadow-lg shadow-brand-500/30 transition flex items-center space-x-2">
-                            <i class="fa-solid fa-plus-circle"></i>
-                            <span>Upload & Sync New Video</span>
-                        </button>
+                    <div>
+                        <h3 class="text-base font-extrabold text-white">Hippo Pippo Admin Studio</h3>
+                        <p class="text-[11px] text-slate-400">Real-time Cloud Sync & Video Management</p>
                     </div>
                 </div>
+                <button onclick="toggleAdminPanel()" class="w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition-colors">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
             </div>
 
-            <!-- Filters & Search Toolbar -->
-            <div class="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between border-b border-neutral-800 pb-4">
-                <div class="flex items-center space-x-3 w-full sm:w-auto">
-                    <h2 class="text-xl font-bold text-white flex items-center gap-2">
-                        <span>Film Library</span>
-                        <span id="catalog-count-badge" class="px-2 py-0.5 rounded-full bg-neutral-800 text-xs text-neutral-400 font-medium">0 titles</span>
-                    </h2>
-                </div>
-
-                <div class="flex flex-wrap sm:flex-nowrap items-center gap-3 w-full sm:w-auto">
-                    <!-- Genre Filter -->
-                    <select id="genre-filter" onchange="renderCatalog()" class="bg-neutral-900 text-xs font-medium text-neutral-300 border border-neutral-800 rounded-lg px-3 py-2 outline-none focus:border-brand-500 transition">
-                        <option value="ALL">All Genres</option>
-                        <option value="Action">Action</option>
-                        <option value="Sci-Fi">Sci-Fi</option>
-                        <option value="Documentary">Documentary</option>
-                        <option value="Animation">Animation</option>
-                        <option value="Drama">Drama</option>
-                        <option value="Comedy">Comedy</option>
-                        <option value="Other">Other</option>
-                    </select>
-
-                    <!-- Search Input -->
-                    <div class="relative w-full sm:w-64">
-                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 text-xs"></i>
-                        <input type="text" id="catalog-search" oninput="renderCatalog()" placeholder="Search films by title or tag..." class="w-full bg-neutral-900 text-xs text-neutral-200 pl-8 pr-3 py-2 rounded-lg border border-neutral-800 focus:border-brand-500 outline-none transition">
-                    </div>
-                </div>
+            <!-- Tab Buttons -->
+            <div class="flex border-b border-slate-800 px-6 bg-dark-900">
+                <button id="tab-btn-add" onclick="switchAdminTab('add-video')" class="py-3 px-4 text-xs font-bold border-b-2 border-brand-500 text-white transition-colors">
+                    <i class="fa-solid fa-plus-circle mr-1.5 text-brand-500"></i>
+                    <span id="admin-form-title-tab">Add New Video</span>
+                </button>
+                <button id="tab-btn-manage" onclick="switchAdminTab('manage-videos')" class="py-3 px-4 text-xs font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition-colors">
+                    <i class="fa-solid fa-list-check mr-1.5"></i>
+                    <span>Manage Catalog (<span id="admin-video-count">0</span>)</span>
+                </button>
+                <button id="tab-btn-coadmin" onclick="switchAdminTab('co-admins')" class="py-3 px-4 text-xs font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition-colors">
+                    <i class="fa-solid fa-users-gear mr-1.5"></i>
+                    <span>Co-Admins</span>
+                </button>
             </div>
 
-            <!-- Live Synchronized Video Grid -->
-            <div id="media-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                <!-- Dynamic cards populated via JS -->
-            </div>
-
-            <!-- Empty State Placeholder -->
-            <div id="empty-catalog-state" class="hidden text-center py-20 bg-neutral-900/40 rounded-2xl border border-dashed border-neutral-800">
-                <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-neutral-800 flex items-center justify-center text-neutral-500 text-2xl">
-                    <i class="fa-solid fa-film"></i>
-                </div>
-                <h3 class="text-lg font-bold text-neutral-300">No synchronized films yet</h3>
-                <p class="text-xs text-neutral-500 max-w-md mx-auto mt-1 mb-6">Log in as Verified Admin (Eadams) to upload MP4/WebM videos or YouTube streams.</p>
-            </div>
-        </section>
-
-        <!-- ========================================================================= -->
-        <!-- VIEW 2: ADMIN & CREATOR SYNC HUB (RESTRICTED TO EADAMS ADMIN) -->
-        <!-- ========================================================================= -->
-        <section id="view-admin" class="hidden space-y-8">
-            <!-- Header Title -->
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-neutral-800">
-                <div>
-                    <h1 class="text-2xl font-black text-white tracking-tight flex items-center gap-3">
-                        <i class="fa-solid fa-shield-halved text-amber-400"></i>
-                        <span>Creator Media & Admin Control Center</span>
-                        <span class="text-xs font-normal text-amber-400 bg-amber-950/60 border border-amber-800/40 px-2 py-0.5 rounded font-mono">Verified Admin Only</span>
-                    </h1>
-                    <p class="text-xs text-neutral-400 mt-1">Upload films, manage user databases, and dispatch live broadcast notifications across all open devices.</p>
-                </div>
-
-                <!-- Admin Action Toolbar (Visible ONLY to Eadams) -->
-                <div id="admin-actions-toolbar" class="flex items-center space-x-2">
-                    <button onclick="triggerSampleSeed()" class="px-3.5 py-2 rounded-lg bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 text-xs font-semibold text-neutral-200 transition flex items-center gap-2">
-                        <i class="fa-solid fa-wand-magic-sparkles text-amber-400"></i> Seed Demo Movies
-                    </button>
-                    <button onclick="clearAllFilms()" class="px-3.5 py-2 rounded-lg bg-red-950/50 hover:bg-red-900/60 border border-red-800/40 text-xs font-semibold text-red-300 transition flex items-center gap-2">
-                        <i class="fa-solid fa-trash-can"></i> Clear Catalog
-                    </button>
-                </div>
-            </div>
-
-            <!-- BROADCAST NOTIFICATION DISPATCH PANEL -->
-            <div class="bg-gradient-to-r from-neutral-900 via-neutral-900 to-brand-950/30 border border-brand-500/30 rounded-2xl p-6 space-y-4 shadow-xl">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-sm font-bold text-white flex items-center gap-2">
-                        <i class="fa-solid fa-tower-broadcast text-brand-500 animate-pulse"></i>
-                        <span>Dispatch Real-Time Live Notification to ALL Devices & Browsers</span>
-                    </h3>
-                    <span class="text-[11px] font-mono bg-brand-500/20 text-brand-400 border border-brand-500/30 px-2 py-0.5 rounded">Global Firestore Snapshot Push</span>
-                </div>
-                
-                <form onsubmit="sendGlobalBroadcast(event)" class="flex flex-col sm:flex-row gap-3">
-                    <input type="text" id="broadcast-message-input" required placeholder="Type live announcement message (e.g. New movie 'Affairs of Cappy Ricks' just added live!)..." class="flex-1 bg-neutral-950 text-xs text-neutral-200 px-4 py-3 rounded-xl border border-neutral-800 focus:border-brand-500 outline-none">
-                    <button type="submit" class="px-6 py-3 bg-brand-500 hover:bg-brand-600 text-white font-bold text-xs rounded-xl shadow-lg shadow-brand-500/30 transition flex items-center justify-center space-x-2 whitespace-nowrap">
-                        <i class="fa-solid fa-paper-plane"></i>
-                        <span>Send Global Broadcast</span>
-                    </button>
-                </form>
-            </div>
-
-            <!-- TOP HALF: DRAG & DROP UPLOAD + YOUTUBE URL & METADATA EXTRACTION ENGINE -->
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                <!-- Drop Zone & Video File / YouTube Link Input -->
-                <div class="lg:col-span-7 space-y-4">
-                    <label class="block text-sm font-semibold text-neutral-300">1. Upload Video File OR Paste YouTube URL</label>
-
-                    <!-- YouTube Direct Embed Option -->
-                    <div class="bg-neutral-900 border border-neutral-800 p-4 rounded-xl space-y-2">
-                        <span class="text-xs font-semibold text-red-400 flex items-center gap-1.5"><i class="fa-brands fa-youtube"></i> Add Playable YouTube Movie URL / Video ID</span>
-                        <div class="flex gap-2">
-                            <input type="text" id="youtube-url-input" placeholder="e.g. https://www.youtube.com/watch?v=J32R0vS-lXQ or J32R0vS-lXQ" class="flex-1 bg-neutral-950 text-xs text-neutral-200 px-3 py-2 rounded-lg border border-neutral-800 focus:border-red-500 outline-none font-mono">
-                            <button type="button" onclick="loadYouTubeMetadata()" class="px-3 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold text-xs rounded-lg transition">Fetch Details</button>
-                        </div>
-                    </div>
-
-                    <div id="drop-zone" onclick="document.getElementById('video-file-input').click()" class="relative border-2 border-dashed border-neutral-700 hover:border-brand-500 bg-neutral-900/60 hover:bg-neutral-900 transition-all rounded-2xl p-8 text-center cursor-pointer flex flex-col items-center justify-center min-h-[180px] group">
-                        <input type="file" id="video-file-input" accept="video/mp4,video/webm,video/ogg" class="hidden" onchange="handleFileSelect(event)">
+            <!-- Modal Body Content -->
+            <div class="p-6 overflow-y-auto flex-grow space-y-6">
+                <!-- TAB 1: Add / Edit Video Form -->
+                <div id="admin-tab-add-video" class="space-y-4">
+                    <form id="video-form" onsubmit="handleSaveVideo(event)" class="space-y-4">
+                        <input type="hidden" id="edit-video-id" value="">
                         
-                        <div class="w-12 h-12 rounded-full bg-neutral-800 group-hover:bg-brand-500/20 group-hover:scale-110 transition-all flex items-center justify-center text-neutral-400 group-hover:text-brand-500 mb-2">
-                            <i class="fa-solid fa-cloud-arrow-up text-xl"></i>
-                        </div>
-                        <h3 class="text-xs font-semibold text-neutral-200">Drag & Drop local video file here, or <span class="text-brand-400 underline">browse</span></h3>
-                        <p class="text-[11px] text-neutral-500 mt-1">Supports MP4, WebM, or OGG up to 50MB</p>
-                        
-                        <div id="file-details-badge" class="hidden mt-3 px-3 py-1 rounded-lg bg-neutral-800 border border-neutral-700 text-xs font-mono text-neutral-300 flex items-center gap-2">
-                            <i class="fa-solid fa-file-video text-brand-400"></i>
-                            <span id="file-name-text">filename.mp4</span>
-                            <span id="file-size-text" class="text-neutral-500">(0 MB)</span>
-                        </div>
-                    </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="space-y-1">
+                                <label class="text-xs font-bold text-slate-300">Video Title *</label>
+                                <input type="text" id="v-title" required placeholder="e.g. Cosmic Hippo Odyssey" class="w-full bg-dark-950 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-brand-500">
+                            </div>
 
-                    <!-- Dynamic Canvas Thumbnail Extractor -->
-                    <video id="hidden-video-extractor" class="hidden" preload="metadata"></video>
-                    <canvas id="thumbnail-canvas" class="hidden"></canvas>
-                </div>
-
-                <!-- Metadata Form & Publish Action -->
-                <div class="lg:col-span-5 bg-neutral-900 border border-neutral-800 rounded-2xl p-6 space-y-4">
-                    <h3 class="text-sm font-bold text-neutral-200 border-b border-neutral-800 pb-3 flex items-center justify-between">
-                        <span>2. Video Metadata Details</span>
-                        <span id="metadata-auto-tag" class="text-[10px] bg-neutral-800 text-neutral-400 px-2 py-0.5 rounded font-mono">Manual / Auto</span>
-                    </h3>
-
-                    <form id="upload-form" onsubmit="publishNewFilm(event)" class="space-y-4">
-                        <div>
-                            <label class="block text-xs font-medium text-neutral-400 mb-1">Film Title *</label>
-                            <input type="text" id="meta-title" required placeholder="e.g. Cyberpunk Horizon" class="w-full bg-neutral-950 text-xs text-neutral-200 px-3 py-2.5 rounded-lg border border-neutral-800 focus:border-brand-500 outline-none">
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-3">
-                            <div>
-                                <label class="block text-xs font-medium text-neutral-400 mb-1">Genre</label>
-                                <select id="meta-genre" class="w-full bg-neutral-950 text-xs text-neutral-200 px-3 py-2.5 rounded-lg border border-neutral-800 focus:border-brand-500 outline-none">
-                                    <option value="Sci-Fi">Sci-Fi</option>
-                                    <option value="Action">Action</option>
-                                    <option value="Documentary">Documentary</option>
-                                    <option value="Animation">Animation</option>
-                                    <option value="Drama">Drama</option>
-                                    <option value="Comedy">Comedy</option>
-                                    <option value="Other">Other</option>
+                            <div class="space-y-1">
+                                <label class="text-xs font-bold text-slate-300">Category *</label>
+                                <select id="v-category" class="w-full bg-dark-950 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-brand-500">
+                                    <option value="Originals">Hippo Originals</option>
+                                    <option value="Movies">Movies</option>
+                                    <option value="Shows">TV Shows</option>
+                                    <option value="Trending">Trending</option>
                                 </select>
                             </div>
-                            <div>
-                                <label class="block text-xs font-medium text-neutral-400 mb-1">Duration</label>
-                                <input type="text" id="meta-duration" placeholder="Auto detected..." class="w-full bg-neutral-950 text-xs text-neutral-300 font-mono px-3 py-2.5 rounded-lg border border-neutral-800 outline-none">
+                        </div>
+
+                        <div class="space-y-1">
+                            <label class="text-xs font-bold text-slate-300">Video Stream URL (MP4 / WebM / YouTube Embed) *</label>
+                            <input type="url" id="v-videoUrl" required placeholder="https://commondatastorage.googleapis.com/.../sample.mp4" class="w-full bg-dark-950 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-brand-500">
+                        </div>
+
+                        <div class="space-y-1">
+                            <label class="text-xs font-bold text-slate-300">Thumbnail Cover Image URL *</label>
+                            <input type="url" id="v-thumbnail" required placeholder="https://images.unsplash.com/photo-..." class="w-full bg-dark-950 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-brand-500">
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div class="space-y-1">
+                                <label class="text-xs font-bold text-slate-300">Genre Tag</label>
+                                <input type="text" id="v-genre" placeholder="Sci-Fi • Action" class="w-full bg-dark-950 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-brand-500">
+                            </div>
+
+                            <div class="space-y-1">
+                                <label class="text-xs font-bold text-slate-300">Quality Badge</label>
+                                <select id="v-badge" class="w-full bg-dark-950 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-brand-500">
+                                    <option value="ORIGINAL">ORIGINAL</option>
+                                    <option value="4K ULTRA">4K ULTRA</option>
+                                    <option value="HD">HD</option>
+                                    <option value="POPULAR">POPULAR</option>
+                                    <option value="NEW RELEASE">NEW RELEASE</option>
+                                </select>
+                            </div>
+
+                            <div class="space-y-1">
+                                <label class="text-xs font-bold text-slate-300">Rating (1.0 - 5.0)</label>
+                                <input type="number" id="v-rating" step="0.1" min="1" max="5" value="4.8" class="w-full bg-dark-950 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-brand-500">
                             </div>
                         </div>
 
-                        <div>
-                            <label class="block text-xs font-medium text-neutral-400 mb-1">Description / Tagline</label>
-                            <textarea id="meta-desc" rows="2" placeholder="Brief story overview..." class="w-full bg-neutral-950 text-xs text-neutral-200 px-3 py-2.5 rounded-lg border border-neutral-800 focus:border-brand-500 outline-none resize-none"></textarea>
+                        <div class="space-y-1">
+                            <label class="text-xs font-bold text-slate-300">Description</label>
+                            <textarea id="v-description" rows="2" placeholder="Brief summary of the stream..." class="w-full bg-dark-950 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-brand-500"></textarea>
                         </div>
 
-                        <!-- Extracted Thumbnail Preview Box -->
-                        <div>
-                            <label class="block text-xs font-medium text-neutral-400 mb-1">Thumbnail Preview</label>
-                            <div class="relative h-28 rounded-lg border border-neutral-800 bg-neutral-950 overflow-hidden flex items-center justify-center group">
-                                <img id="meta-thumb-preview" src="https://placehold.co/600x400/18181b/ffffff?text=No+Thumbnail+Generated" class="w-full h-full object-cover">
-                            </div>
+                        <div class="flex items-center space-x-2 pt-1">
+                            <input type="checkbox" id="v-isFeatured" class="w-4 h-4 accent-brand-500 rounded cursor-pointer">
+                            <label for="v-isFeatured" class="text-xs font-bold text-slate-300 cursor-pointer">Set as Featured Hero Banner Showcase</label>
                         </div>
 
-                        <button type="submit" id="publish-btn" class="w-full py-3 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-bold text-xs uppercase tracking-wider transition shadow-lg shadow-brand-500/20 flex items-center justify-center space-x-2">
-                            <i class="fa-solid fa-cloud-arrow-up"></i>
-                            <span>Push To Cloud & Sync Everywhere</span>
-                        </button>
+                        <div class="flex items-center justify-end space-x-3 pt-3 border-t border-slate-800">
+                            <button type="button" onclick="resetVideoForm()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-300 transition-colors">
+                                Reset Form
+                            </button>
+                            <button type="submit" id="save-video-btn" class="px-6 py-2 rounded-xl bg-gradient-to-r from-brand-600 to-brand-500 hover:brightness-110 text-xs font-bold text-white shadow-lg shadow-brand-600/30 transition-all flex items-center space-x-2">
+                                <i class="fa-solid fa-cloud-arrow-up"></i>
+                                <span id="save-btn-text">Publish Live & Sync</span>
+                            </button>
+                        </div>
                     </form>
                 </div>
-            </div>
 
-            <!-- USERS DATABASE & ADMIN MANAGEMENT PANEL (Visible strictly to Admin Eadams) -->
-            <div id="admin-users-panel" class="bg-neutral-900 border border-neutral-800 rounded-2xl p-6 shadow-xl space-y-4">
-                <div class="flex items-center justify-between border-b border-neutral-800 pb-3">
-                    <div>
-                        <h3 class="text-base font-bold text-neutral-200 flex items-center gap-2">
-                            <i class="fa-solid fa-users-gear text-amber-400"></i> User Accounts & Admin Privileges Database
-                        </h3>
-                        <p class="text-xs text-neutral-400">Manage registered accounts and elevate users to verified Admin status.</p>
+                <!-- TAB 2: Manage Video Catalog -->
+                <div id="admin-tab-manage-videos" class="hidden space-y-3">
+                    <p class="text-xs text-slate-400">Manage all current streams in the live database. Edits and deletions sync instantly across all devices.</p>
+                    <div id="admin-video-list-container" class="space-y-2"></div>
+                </div>
+
+                <!-- TAB 3: Co-Admins Manager -->
+                <div id="admin-tab-co-admins" class="hidden space-y-4">
+                    <p class="text-xs text-slate-400">Co-admins can add and update content on Hippo Pippo.</p>
+                    
+                    <div class="flex space-x-2">
+                        <input type="text" id="new-coadmin-name" placeholder="Enter Co-Admin Name (e.g. Daniel)" class="flex-grow bg-dark-950 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-brand-500">
+                        <button onclick="addCoAdmin()" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs rounded-xl transition-colors flex items-center space-x-1.5">
+                            <i class="fa-solid fa-user-plus"></i>
+                            <span>Grant Access</span>
+                        </button>
                     </div>
-                    <span id="user-count-badge" class="px-3 py-1 rounded-full bg-neutral-800 border border-neutral-700 text-xs font-semibold text-neutral-300">
-                        1 Accounts
-                    </span>
-                </div>
 
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-xs">
-                        <thead class="bg-neutral-950 text-neutral-400 uppercase font-mono border-b border-neutral-800">
-                            <tr>
-                                <th class="p-3">User / Profile</th>
-                                <th class="p-3">Email Address</th>
-                                <th class="p-3">User ID</th>
-                                <th class="p-3">Role Status</th>
-                                <th class="p-3 text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="users-table-body" class="divide-y divide-neutral-800 font-mono text-neutral-300">
-                            <!-- Populated dynamically via renderAdminTable() -->
-                        </tbody>
-                    </table>
+                    <div id="coadmin-list" class="space-y-2 pt-2"></div>
                 </div>
             </div>
-        </section>
-    </main>
+        </div>
+    </div>
 
-    <!-- AUTHENTICATION & ACCOUNT MODAL -->
-    <div id="auth-modal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-md items-center justify-center p-4">
-        <div class="bg-neutral-900 border border-neutral-800 w-full max-w-md rounded-2xl p-6 sm:p-8 space-y-6 shadow-2xl relative">
-            <button onclick="closeAuthModal()" class="absolute top-4 right-4 text-neutral-500 hover:text-white transition">
+    <!-- 2. CINEMA VIDEO PLAYER MODAL -->
+    <div id="player-modal" class="hidden fixed inset-0 z-50 bg-black/95 backdrop-blur-2xl flex flex-col justify-between">
+        <!-- Header Bar -->
+        <div class="px-6 py-4 flex items-center justify-between z-20 bg-gradient-to-b from-black/80 to-transparent">
+            <div class="flex items-center space-x-3">
+                <span id="player-badge" class="px-2.5 py-1 rounded-md bg-brand-600 text-white font-extrabold text-[10px] uppercase">HD STREAM</span>
+                <div>
+                    <h2 id="player-title" class="text-sm md:text-base font-extrabold text-white truncate max-w-md">Video Player</h2>
+                    <span id="player-category" class="text-[11px] text-slate-400">Hippo Originals</span>
+                </div>
+            </div>
+            <button onclick="closeVideoPlayer()" class="w-9 h-9 rounded-full bg-white/10 hover:bg-brand-600 text-white flex items-center justify-center transition-all">
                 <i class="fa-solid fa-xmark text-lg"></i>
             </button>
+        </div>
 
-            <div class="text-center space-y-2">
-                <div class="w-12 h-12 rounded-2xl bg-brand-500/20 border border-brand-500/30 text-brand-500 flex items-center justify-center mx-auto text-2xl">
-                    <i class="fa-solid fa-user-shield"></i>
-                </div>
-                <h3 id="auth-modal-title" class="text-xl font-bold text-white">Hippo Pippo Account Sync</h3>
-                <p id="auth-modal-subtitle" class="text-xs text-neutral-400">Sign in to automatically sync your watch progress & content across all devices.</p>
+        <!-- Video Player Viewport -->
+        <div class="relative flex-grow flex items-center justify-center w-full max-w-6xl mx-auto p-2 sm:p-6">
+            <!-- Loading Spinner -->
+            <div id="player-loader" class="hidden absolute flex flex-col items-center justify-center space-y-3 z-30">
+                <div class="w-12 h-12 border-4 border-brand-600 border-t-transparent rounded-full animate-spin"></div>
+                <span class="text-xs font-bold text-slate-300">Loading Stream...</span>
             </div>
 
-            <!-- Auth Form -->
-            <form id="auth-form" onsubmit="handleAuthSubmit(event)" class="space-y-4">
-                <div>
-                    <label id="auth-identifier-label" class="block text-xs font-medium text-neutral-400 mb-1">Email Address (or Admin Username Eadams)</label>
-                    <input type="text" id="auth-email" required placeholder="name@example.com or Eadams" class="w-full bg-neutral-950 text-xs text-neutral-200 px-4 py-3 rounded-xl border border-neutral-800 focus:border-brand-500 outline-none">
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-neutral-400 mb-1">Password</label>
-                    <input type="password" id="auth-password" required placeholder="••••••••" class="w-full bg-neutral-950 text-xs text-neutral-200 px-4 py-3 rounded-xl border border-neutral-800 focus:border-brand-500 outline-none">
-                </div>
+            <!-- HTML5 Direct Video Player -->
+            <video id="html5-player" controls autoplay class="w-full max-h-[75vh] rounded-2xl shadow-2xl bg-black hidden">
+                <source id="video-source" src="" type="video/mp4">
+                Your browser does not support video playback.
+            </video>
 
-                <div class="flex items-center justify-between text-xs pt-1">
-                    <button type="button" id="auth-toggle-mode-btn" onclick="toggleAuthMode()" class="text-brand-400 hover:underline font-semibold">Need an account? Sign Up</button>
-                </div>
+            <!-- Embedded Video Player (YouTube / Vimeo) -->
+            <iframe id="iframe-player" class="w-full aspect-video max-h-[75vh] rounded-2xl shadow-2xl hidden" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        </div>
 
-                <button type="submit" id="auth-submit-btn" class="w-full py-3 bg-brand-500 hover:bg-brand-600 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition shadow-lg shadow-brand-500/20">
-                    Sign In
+        <!-- Footer Info Bar -->
+        <div class="px-6 py-4 bg-gradient-to-t from-black/90 via-black/50 to-transparent z-20 flex items-center justify-between">
+            <p id="player-description" class="text-xs text-slate-300 max-w-2xl line-clamp-2">Now playing live video stream.</p>
+            <button onclick="copyShareLink()" class="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition-colors flex items-center space-x-1.5">
+                <i class="fa-solid fa-share-nodes text-brand-500"></i>
+                <span class="hidden sm:inline">Share</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 3. LOGIN & ACCOUNT AUTHENTICATION MODAL -->
+    <div id="login-modal" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-xl flex items-center justify-center p-4">
+        <div class="bg-dark-900 border border-slate-800 rounded-3xl w-full max-w-md shadow-2xl p-6 sm:p-8 relative overflow-hidden space-y-6">
+            <!-- Background Ambient Glow -->
+            <div class="absolute -top-24 -right-24 w-48 h-48 bg-brand-600/20 rounded-full blur-3xl pointer-events-none"></div>
+
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-700 to-amber-500 flex items-center justify-center text-white shadow-lg shadow-brand-600/30">
+                        <i class="fa-solid fa-hippo text-xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-extrabold text-white">Hippo Pippo Login</h3>
+                        <p class="text-xs text-slate-400">Sign in to your streaming profile</p>
+                    </div>
+                </div>
+                <button onclick="closeLoginModal()" class="w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition-colors">
+                    <i class="fa-solid fa-xmark"></i>
                 </button>
+            </div>
+
+            <!-- 1-Click Quick Login Presets -->
+            <div class="space-y-2">
+                <label class="text-xs font-bold text-slate-300 uppercase tracking-wider">Select Account Profile</label>
+                <div class="grid grid-cols-2 gap-2.5">
+                    <!-- Admin Master -->
+                    <button onclick="executeLogin('Admin Master', 'A', 'admin')" class="p-3 rounded-2xl bg-dark-950 border border-slate-800 hover:border-brand-500 hover:bg-dark-800 text-left transition-all group flex flex-col justify-between">
+                        <div class="flex items-center justify-between w-full mb-1">
+                            <span class="w-7 h-7 rounded-full bg-brand-600/20 text-brand-400 flex items-center justify-center text-xs font-bold">A</span>
+                            <span class="text-[9px] bg-brand-600/30 text-brand-400 font-bold px-1.5 py-0.5 rounded">ADMIN</span>
+                        </div>
+                        <div>
+                            <p class="text-xs font-bold text-white group-hover:text-brand-400">Admin Master</p>
+                            <p class="text-[10px] text-slate-400">Full Cloud Control</p>
+                        </div>
+                    </button>
+
+                    <!-- Daniel (Co-Admin) -->
+                    <button onclick="executeLogin('Daniel (Co-Admin)', 'D', 'coadmin')" class="p-3 rounded-2xl bg-dark-950 border border-slate-800 hover:border-amber-500 hover:bg-dark-800 text-left transition-all group flex flex-col justify-between">
+                        <div class="flex items-center justify-between w-full mb-1">
+                            <span class="w-7 h-7 rounded-full bg-amber-500/20 text-amber-300 flex items-center justify-center text-xs font-bold">D</span>
+                            <span class="text-[9px] bg-amber-500/20 text-amber-300 font-bold px-1.5 py-0.5 rounded">CO-ADMIN</span>
+                        </div>
+                        <div>
+                            <p class="text-xs font-bold text-white group-hover:text-amber-400">Daniel</p>
+                            <p class="text-[10px] text-slate-400">Content Manager</p>
+                        </div>
+                    </button>
+
+                    <!-- Family Room -->
+                    <button onclick="executeLogin('Family Room', 'F', 'viewer')" class="p-3 rounded-2xl bg-dark-950 border border-slate-800 hover:border-emerald-500 hover:bg-dark-800 text-left transition-all group flex flex-col justify-between">
+                        <div class="flex items-center justify-between w-full mb-1">
+                            <span class="w-7 h-7 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xs font-bold">F</span>
+                            <span class="text-[9px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded">VIEWER</span>
+                        </div>
+                        <div>
+                            <p class="text-xs font-bold text-white group-hover:text-emerald-400">Family Room</p>
+                            <p class="text-[10px] text-slate-400">Stream Movies</p>
+                        </div>
+                    </button>
+
+                    <!-- Guest Viewer -->
+                    <button onclick="executeLogin('Guest Viewer', 'G', 'viewer')" class="p-3 rounded-2xl bg-dark-950 border border-slate-800 hover:border-sky-500 hover:bg-dark-800 text-left transition-all group flex flex-col justify-between">
+                        <div class="flex items-center justify-between w-full mb-1">
+                            <span class="w-7 h-7 rounded-full bg-sky-500/20 text-sky-400 flex items-center justify-center text-xs font-bold">G</span>
+                            <span class="text-[9px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded">GUEST</span>
+                        </div>
+                        <div>
+                            <p class="text-xs font-bold text-white group-hover:text-sky-400">Guest Viewer</p>
+                            <p class="text-[10px] text-slate-400">Standard Access</p>
+                        </div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Custom Form Login (PIN / Passcode / Email) -->
+            <form onsubmit="handleFormLogin(event)" class="space-y-3 pt-2 border-t border-slate-800">
+                <p class="text-xs font-bold text-slate-300 uppercase tracking-wider">Or Login with Credentials</p>
+                
+                <div class="space-y-1">
+                    <label class="text-[11px] font-semibold text-slate-400">Account Username / Email</label>
+                    <input type="text" id="login-input-username" required placeholder="admin@hippopippo.com or Daniel" class="w-full bg-dark-950 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-brand-500">
+                </div>
+
+                <div class="space-y-1">
+                    <label class="text-[11px] font-semibold text-slate-400">Security Passcode / Password</label>
+                    <input type="password" id="login-input-pin" required placeholder="Enter password (e.g. Hippo for Admin)" class="w-full bg-dark-950 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-brand-500">
+                </div>
+
+                <button type="submit" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-brand-700 to-brand-500 hover:brightness-110 text-white font-bold text-xs shadow-lg shadow-brand-600/30 transition-all">
+                    Sign In & Verify Account
+                </button>
+            </form>
+
+            <p class="text-[10px] text-center text-slate-500">
+                All video edits & additions sync in real-time across connected browsers.
+            </p>
+        </div>
+    </div>
+
+    <!-- 4. ADMIN PASSWORD VERIFICATION MODAL -->
+    <div id="password-modal" class="hidden fixed inset-0 z-[60] bg-black/90 backdrop-blur-2xl flex items-center justify-center p-4">
+        <div class="bg-dark-900 border border-brand-500/40 rounded-3xl w-full max-w-sm shadow-2xl p-6 relative overflow-hidden space-y-5 text-center">
+            <div class="w-14 h-14 rounded-2xl bg-brand-600/20 border border-brand-500/40 text-brand-500 flex items-center justify-center mx-auto shadow-lg shadow-brand-600/20">
+                <i class="fa-solid fa-lock text-2xl"></i>
+            </div>
+            
+            <div>
+                <h3 class="text-lg font-extrabold text-white">Admin Security Passcode</h3>
+                <p id="password-prompt-subtitle" class="text-xs text-slate-400 mt-1">Please enter the password to access Admin controls.</p>
+            </div>
+
+            <form onsubmit="handlePasswordSubmit(event)" class="space-y-4">
+                <input type="password" id="admin-passcode-input" required placeholder="Enter password..." class="w-full bg-dark-950 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-center text-white tracking-widest focus:outline-none focus:border-brand-500">
+                
+                <div class="flex items-center space-x-2">
+                    <button type="button" onclick="closePasswordModal()" class="w-1/2 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit" class="w-1/2 py-2 rounded-xl bg-gradient-to-r from-brand-600 to-brand-500 hover:brightness-110 text-white font-bold text-xs shadow-lg shadow-brand-600/30 transition-all">
+                        Unlock Admin
+                    </button>
+                </div>
             </form>
         </div>
     </div>
 
-    <!-- ACCOUNT SYNCHRONIZED POPUP MODAL -->
-    <div id="account-synced-modal" class="fixed inset-0 z-50 hidden bg-black/85 backdrop-blur-md items-center justify-center p-4">
-        <div class="bg-neutral-900 border border-brand-500/50 w-full max-w-sm rounded-2xl p-6 text-center space-y-4 shadow-2xl relative">
-            <div class="w-16 h-16 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center mx-auto text-3xl pulse-glow">
-                <i class="fa-solid fa-arrows-rotate text-emerald-400"></i>
-            </div>
-            <div>
-                <span class="px-2.5 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-700/50 text-[10px] font-mono uppercase font-bold tracking-wider">Live Cloud Sync Established</span>
-                <h3 class="text-xl font-extrabold text-white mt-2">Account Synchronized!</h3>
-                <p id="synced-modal-email" class="text-xs text-brand-400 font-mono mt-1">user@example.com</p>
-            </div>
-            
-            <div class="bg-neutral-950 border border-neutral-800 rounded-xl p-3 text-left space-y-2 text-xs">
-                <div class="flex justify-between items-center border-b border-neutral-800 pb-1.5">
-                    <span class="text-neutral-400">Sync Status</span>
-                    <span class="text-emerald-400 font-bold flex items-center gap-1"><i class="fa-solid fa-circle text-[8px]"></i> Active Everywhere</span>
-                </div>
-                <div class="flex justify-between items-center border-b border-neutral-800 pb-1.5">
-                    <span class="text-neutral-400">Profile Type</span>
-                    <span id="synced-modal-profile" class="text-neutral-200 font-medium">Adult Profile</span>
-                </div>
-                <div class="flex justify-between items-center">
-                    <span class="text-neutral-400">Device Handshake</span>
-                    <span class="text-neutral-300 font-mono text-[10px]">Cross-Browser Enabled</span>
-                </div>
-            </div>
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
 
-            <p class="text-[11px] text-neutral-400">Your film library, watch progress, and live broadcast notifications will now sync instantly across all browsers and devices.</p>
 
-            <button onclick="closeAccountSyncedModal()" class="w-full py-2.5 bg-brand-500 hover:bg-brand-600 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition shadow-lg shadow-brand-500/30">
-                Start Streaming & Syncing
-            </button>
-        </div>
-    </div>
+    <!-- ==================== FIREBASE REALTIME BACKEND SCRIPT ==================== -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, setDoc, addDoc, updateDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    <!-- FULLSCREEN VIDEO PLAYER MODAL WITH YOUTUBE & LOCAL EMBED SUPPORT -->
-    <div id="video-modal" class="fixed inset-0 z-50 hidden bg-black/95 backdrop-blur-xl flex flex-col justify-between">
-        <!-- Player Header Toolbar -->
-        <div class="p-4 sm:p-6 flex items-center justify-between text-white bg-gradient-to-b from-black/90 to-transparent z-10">
-            <div class="flex items-center space-x-3">
-                <span class="w-3 h-3 rounded-full bg-brand-500 pulse-glow"></span>
-                <div>
-                    <h3 id="modal-video-title" class="font-bold text-base sm:text-lg text-neutral-100">Video Title</h3>
-                    <p id="modal-video-subtitle" class="text-xs text-neutral-400">Streaming from Hippo Pippo Cloud Engine</p>
-                </div>
-            </div>
-            <button onclick="closeVideoModal()" class="w-10 h-10 rounded-full bg-neutral-900/80 hover:bg-neutral-800 text-neutral-300 hover:text-white flex items-center justify-center transition border border-neutral-700">
-                <i class="fa-solid fa-xmark text-lg"></i>
-            </button>
-        </div>
+        // Firebase Configuration Guard
+        const firebaseConfig = typeof __firebase_config !== 'undefined' 
+            ? JSON.parse(__firebase_config) 
+            : {
+                apiKey: "demo-api-key",
+                authDomain: "demo-app.firebaseapp.com",
+                projectId: "demo-app",
+                storageBucket: "demo-app.appspot.com",
+                messagingSenderId: "123456789",
+                appId: "1:123456789:web:demo"
+            };
 
-        <!-- Video Player Container Slot (HTML5 Video or YouTube iFrame) -->
-        <div id="player-container" class="flex-1 flex items-center justify-center relative p-2 sm:p-6">
-            <!-- Dynamic elements appended via JS -->
-        </div>
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'hippo-pippo-default-app';
 
-        <!-- Footer Bar -->
-        <div class="p-4 text-center text-xs text-neutral-500 bg-gradient-to-t from-black/90 to-transparent flex items-center justify-between max-w-7xl mx-auto w-full">
-            <span id="player-sync-indicator" class="text-emerald-400 font-mono text-[11px]"><i class="fa-solid fa-cloud"></i> Progress auto-synced across devices</span>
-            <span>Hippo Pippo Real-Time Broadcast Session</span>
-        </div>
-    </div>
+        // Initialize App & Firestore
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
 
-    <!-- NOTIFICATION TOAST CONTAINER -->
-    <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col space-y-2 pointer-events-none"></div>
-
-    <!-- JAVASCRIPT APPLICATION LOGIC -->
-    <script>
-        /* =========================================================================
-           1. INITIAL STATE & CATALOG STORAGE SETUP
-           ========================================================================= */
-        const APP_ID = typeof __app_id !== 'undefined' ? __app_id : 'hippo-pippo-sync-v1';
-        
-        let filmCatalog = [];
-        let broadcastNotifications = [];
-        let userAccountsList = [];
-        let unreadNotifCount = 0;
-        let activeProfile = 'Adult';
-        let isAuthSignUpMode = false;
-        let currentPlayingFilmId = null;
-
-        let selectedFileBlob = null;
-        let generatedThumbnailUrl = '';
-        let extractedDurationStr = '0:00';
-        let customYoutubeId = null;
-        
-        let db = null;
-        let auth = null;
-        let currentUser = null;
-        let isFirebaseActive = false;
-
-        // Verified Admin Account Details
-        const VERIFIED_ADMIN = {
-            username: 'Eadams',
-            email: 'eadams@hippopippo.com',
-            password: 'Floof2020',
-            role: 'Verified Admin'
+        // Application State
+        window.state = {
+            videos: [],
+            currentUser: 'Guest Viewer',
+            userAvatar: 'G',
+            role: 'viewer', // Default to Guest Viewer (non-admin)
+            isAdmin: false,
+            coAdmins: ['Daniel (Primary Co-Admin)', 'Master Admin'],
+            myFavorites: new Set(),
+            searchQuery: '',
+            selectedCategory: 'All',
+            currentHeroId: null,
+            isSubscribed: true,
+            myListOnly: false
         };
 
-        // Broadcast Channel for Multi-Tab & Multi-Browser Real-Time Sync Fallback
-        const broadcastChannel = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('hippo_global_sync') : null;
-
-        if (broadcastChannel) {
-            broadcastChannel.onmessage = (event) => {
-                const { type, data } = event.data;
-                if (type === 'NEW_NOTIFICATION') {
-                    addNotificationToState(data, false);
-                } else if (type === 'CATALOG_UPDATE') {
-                    filmCatalog = data;
-                    renderCatalog();
-                    showToast("Library updated live across tabs!", "info");
-                }
-            };
-        }
-
-        // Sample Movie Library
-        const SAMPLE_MOVIES = [
+        // Standard Default Video Catalog fallback seed
+        const defaultVideosSeed = [
             {
-                id: 'yt-cappy-ricks',
-                title: 'Affairs of Cappy Ricks (1937)',
-                genre: 'Comedy',
-                duration: '56:00',
-                desc: 'Classic vintage comedy film following skipper Cappy Ricks in an engaging sea adventure.',
-                thumbnail: 'https://img.youtube.com/vi/XUbnmtrytw8/hqdefault.jpg',
-                videoUrl: 'https://www.youtube.com/embed/XUbnmtrytw8?autoplay=1',
-                youtubeId: 'XUbnmtrytw8',
-                sourceType: 'YouTube Stream',
-                timestamp: Date.now() - 100000
+                id: 'vid-1',
+                title: 'Hippo Odyssey: Return to the Wild',
+                category: 'Originals',
+                videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+                thumbnail: 'https://images.unsplash.com/photo-1546182990-dffeafbe841d?auto=format&fit=crop&w=1200&q=80',
+                genre: 'Sci-Fi • Adventure',
+                badge: 'ORIGINAL',
+                rating: 4.9,
+                description: 'An epic journey across unmapped worlds as ancient beasts rise once more to take back their home star.',
+                isFeatured: true,
+                createdAt: new Date().toISOString()
             },
             {
-                id: 'yt-sainted-sisters',
-                title: 'The Sainted Sisters (1948)',
-                genre: 'Drama',
-                duration: '1:29:00',
-                desc: 'Classic comedy drama following two women fleeing to a remote Maine town with stolen funds.',
-                thumbnail: 'https://img.youtube.com/vi/jg9gTszI6AM/hqdefault.jpg',
-                videoUrl: 'https://www.youtube.com/embed/jg9gTszI6AM?autoplay=1',
-                youtubeId: 'jg9gTszI6AM',
-                sourceType: 'YouTube Stream',
-                timestamp: Date.now() - 200000
+                id: 'vid-2',
+                title: 'Cyber City 2099',
+                category: 'Movies',
+                videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
+                thumbnail: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800&q=80',
+                genre: 'Action • Cyberpunk',
+                badge: '4K ULTRA',
+                rating: 4.7,
+                description: 'In a neon-soaked metropolis, rogue agents fight for control over the core central memory matrix.',
+                isFeatured: false,
+                createdAt: new Date().toISOString()
             },
             {
-                id: 'yt-magical-world',
-                title: 'The Magical World (Full Animated Film)',
-                genre: 'Animation',
-                duration: '1:10:00',
-                desc: 'An impossible adventure begins across mystical fantasy realms and uncharted dimensions.',
-                thumbnail: 'https://img.youtube.com/vi/st26oLsmiI8/hqdefault.jpg',
-                videoUrl: 'https://www.youtube.com/embed/st26oLsmiI8?autoplay=1',
-                youtubeId: 'st26oLsmiI8',
-                sourceType: 'YouTube Stream',
-                timestamp: Date.now() - 300000
+                id: 'vid-3',
+                title: 'The Great Safari Chronicles',
+                category: 'Shows',
+                videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+                thumbnail: 'https://images.unsplash.com/photo-1516426122078-c23e76319801?auto=format&fit=crop&w=800&q=80',
+                genre: 'Documentary • Nature',
+                badge: 'POPULAR',
+                rating: 4.8,
+                description: 'Explore the breathtaking landscapes and wildlife of the deep savanna in high definition.',
+                isFeatured: false,
+                createdAt: new Date().toISOString()
+            },
+            {
+                id: 'vid-4',
+                title: 'Galactic Horizon',
+                category: 'Trending',
+                videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4',
+                thumbnail: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=800&q=80',
+                genre: 'Space • Drama',
+                badge: 'NEW RELEASE',
+                rating: 4.6,
+                description: 'A stranded astronaut team races against time to broadcast a beacon back to deep space telemetry.',
+                isFeatured: false,
+                createdAt: new Date().toISOString()
             }
         ];
 
-        /* Close modal on ESC key */
-        window.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                closeVideoModal();
-                closeAuthModal();
-                closeAccountSyncedModal();
-            }
-        });
-
-        /* =========================================================================
-           2. RENDER CATALOG & ADMIN MEDIA LISTS
-           ========================================================================= */
-        function switchTab(tab) {
-            const catalogView = document.getElementById('view-catalog');
-            const adminView = document.getElementById('view-admin');
-            const catalogBtn = document.getElementById('nav-catalog-btn');
-            const adminBtn = document.getElementById('nav-admin-btn');
-            const mCatalogBtn = document.getElementById('mobile-nav-catalog');
-            const mAdminBtn = document.getElementById('mobile-nav-admin');
-
-            if (tab === 'catalog') {
-                catalogView.classList.remove('hidden');
-                adminView.classList.add('hidden');
-                
-                if (catalogBtn) catalogBtn.className = "px-4 py-1.5 rounded-lg text-sm font-medium transition-all bg-brand-500 text-white shadow-lg";
-                if (adminBtn) adminBtn.className = "px-4 py-1.5 rounded-lg text-sm font-medium text-neutral-400 hover:text-white hover:bg-neutral-800 transition-all";
-                
-                if (mCatalogBtn) mCatalogBtn.className = "flex-1 py-2 rounded-lg text-xs font-semibold bg-brand-500 text-white text-center";
-                if (mAdminBtn) mAdminBtn.className = "flex-1 py-2 rounded-lg text-xs font-semibold text-neutral-400 bg-neutral-800 text-center";
-            } else {
-                if (!currentUser || !currentUser.isAdmin) {
-                    showToast("Creator Admin is strictly restricted to Verified Admin Eadams", "error");
-                    openAuthModal();
-                    return;
-                }
-
-                catalogView.classList.add('hidden');
-                adminView.classList.remove('hidden');
-
-                if (adminBtn) adminBtn.className = "px-4 py-1.5 rounded-lg text-sm font-medium transition-all bg-brand-500 text-white shadow-lg";
-                if (catalogBtn) catalogBtn.className = "px-4 py-1.5 rounded-lg text-sm font-medium text-neutral-400 hover:text-white hover:bg-neutral-800 transition-all";
-
-                if (mAdminBtn) mAdminBtn.className = "flex-1 py-2 rounded-lg text-xs font-semibold bg-brand-500 text-white text-center";
-                if (mCatalogBtn) mCatalogBtn.className = "flex-1 py-2 rounded-lg text-xs font-semibold text-neutral-400 bg-neutral-800 text-center";
-                
-                renderAdminTable();
-            }
-        }
-        window.switchTab = switchTab;
-
-        function handleHeroUploadClick() {
-            if (currentUser && currentUser.isAdmin) {
-                switchTab('admin');
-            } else if (!currentUser) {
-                openAuthModal();
-                showToast("Please sign in as Verified Admin Eadams to upload films", "info");
-            } else {
-                showToast("Film upload is strictly restricted to Verified Admin Eadams", "error");
-            }
-        }
-        window.handleHeroUploadClick = handleHeroUploadClick;
-
-        function updateCatalogViews() {
-            renderCatalog();
-            renderAdminTable();
-        }
-        window.updateCatalogViews = updateCatalogViews;
-
-        function renderCatalog() {
-            const grid = document.getElementById('media-grid');
-            const emptyState = document.getElementById('empty-catalog-state');
-            const searchVal = (document.getElementById('catalog-search')?.value || '').toLowerCase();
-            const genreVal = document.getElementById('genre-filter')?.value || 'ALL';
-            const countBadge = document.getElementById('catalog-count-badge');
-
-            let filtered = filmCatalog.filter(film => {
-                const matchesSearch = film.title.toLowerCase().includes(searchVal) || film.desc.toLowerCase().includes(searchVal);
-                const matchesGenre = genreVal === 'ALL' || film.genre === genreVal;
-                return matchesSearch && matchesGenre;
-            });
-
-            if (countBadge) countBadge.textContent = `${filtered.length} titles`;
-
-            if (filtered.length === 0) {
-                grid.innerHTML = '';
-                emptyState.classList.remove('hidden');
-                return;
-            }
-
-            emptyState.classList.add('hidden');
-            grid.innerHTML = filtered.map(film => `
-                <div class="group bg-neutral-900 border border-neutral-800 hover:border-neutral-700 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 flex flex-col justify-between cursor-pointer" onclick="openVideoModal('${film.id}')">
-                    <div class="relative aspect-video bg-neutral-950 overflow-hidden">
-                        <img src="${film.thumbnail}" alt="${film.title}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" onerror="this.src='https://placehold.co/600x400/18181b/ffffff?text=Video+Stream'">
-                        
-                        <div class="absolute inset-0 bg-gradient-to-t from-neutral-950 via-neutral-950/20 to-transparent opacity-80 group-hover:opacity-60 transition-opacity"></div>
-                        
-                        <div class="absolute top-3 left-3 flex items-center gap-2">
-                            <span class="px-2 py-0.5 rounded-md bg-neutral-900/90 backdrop-blur border border-neutral-700 text-[10px] font-bold uppercase tracking-wider text-neutral-300">${film.genre}</span>
-                        </div>
-
-                        <div class="absolute bottom-3 right-3 px-2 py-0.5 rounded bg-black/80 text-[10px] font-mono text-neutral-300">
-                            ${film.duration}
-                        </div>
-
-                        <!-- Hover Play Overlay Button -->
-                        <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 backdrop-blur-[2px]">
-                            <div class="w-12 h-12 rounded-full bg-brand-500 text-white flex items-center justify-center text-lg shadow-xl shadow-brand-500/50 transform group-hover:scale-110 transition-transform">
-                                <i class="fa-solid fa-play ml-1"></i>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="p-4 flex-1 flex flex-col justify-between space-y-3">
-                        <div>
-                            <h3 class="font-bold text-sm text-white group-hover:text-brand-400 transition-colors line-clamp-1">${film.title}</h3>
-                            <p class="text-xs text-neutral-400 line-clamp-2 mt-1 leading-relaxed">${film.desc}</p>
-                        </div>
-
-                        <div class="pt-3 border-t border-neutral-800/80 flex items-center justify-between text-[11px] text-neutral-500">
-                            <span class="flex items-center gap-1.5">
-                                <i class="fa-solid fa-bolt text-amber-500"></i> ${film.sourceType || 'Synced'}
-                            </span>
-                            <button onclick="event.stopPropagation(); openVideoModal('${film.id}')" class="text-brand-400 font-semibold hover:underline">
-                                Watch Now <i class="fa-solid fa-chevron-right text-[9px] ml-0.5"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-        }
-        window.renderCatalog = renderCatalog;
-
-        /* =========================================================================
-           3. MEDIA PLAYER MODAL OPEN & CLOSE LOGIC
-           ========================================================================= */
-        function openVideoModal(filmId) {
-            const film = filmCatalog.find(f => f.id === filmId);
-            if (!film) {
-                showToast("Movie not found in catalog", "error");
-                return;
-            }
-
-            currentPlayingFilmId = filmId;
-            const modal = document.getElementById('video-modal');
-            const container = document.getElementById('player-container');
-            
-            document.getElementById('modal-video-title').textContent = film.title;
-            document.getElementById('modal-video-subtitle').textContent = `${film.genre} • ${film.duration} • ${film.desc}`;
-            
-            container.innerHTML = '';
-
-            // Handle YouTube Embed vs HTML5 Video Source
-            if (film.youtubeId || (film.videoUrl && film.videoUrl.includes('youtube.com'))) {
-                let ytId = film.youtubeId;
-                if (!ytId && film.videoUrl) {
-                    const match = film.videoUrl.match(/(?:embed\/|v\/|watch\?v=)([^#\&\?]*)/);
-                    if (match && match[1]) ytId = match[1];
-                }
-
-                container.innerHTML = `
-                    <iframe class="w-full max-w-5xl aspect-video rounded-2xl shadow-2xl border border-neutral-800"
-                        src="https://www.youtube.com/embed/${ytId}?autoplay=1&enablejsapi=1&rel=0" 
-                        title="${film.title}" 
-                        frameborder="0" 
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                        allowfullscreen>
-                    </iframe>
-                `;
-            } else {
-                container.innerHTML = `
-                    <video id="modal-player" controls autoplay class="w-full max-w-5xl max-h-[75vh] rounded-2xl shadow-2xl bg-black border border-neutral-800">
-                        <source src="${film.videoUrl}" type="video/mp4">
-                        Your browser does not support HTML video playback.
-                    </video>
-                `;
-            }
-
-            modal.classList.remove('hidden');
-        }
-        window.openVideoModal = openVideoModal;
-
-        function closeVideoModal() {
-            const modal = document.getElementById('video-modal');
-            const container = document.getElementById('player-container');
-            container.innerHTML = '';
-            modal.classList.add('hidden');
-            currentPlayingFilmId = null;
-        }
-        window.closeVideoModal = closeVideoModal;
-
-        /* =========================================================================
-           4. ACCOUNT, PROFILE & DROPDOWN MENU HANDLERS
-           ========================================================================= */
-        function toggleAccountMenu() {
-            const menu = document.getElementById('account-menu');
-            const notifDropdown = document.getElementById('notification-dropdown');
-            if (notifDropdown) notifDropdown.classList.add('hidden');
-            if (menu) menu.classList.toggle('hidden');
-        }
-        window.toggleAccountMenu = toggleAccountMenu;
-
-        function toggleNotificationDropdown() {
-            const notifDropdown = document.getElementById('notification-dropdown');
-            const menu = document.getElementById('account-menu');
-            if (menu) menu.classList.add('hidden');
-            if (notifDropdown) {
-                notifDropdown.classList.toggle('hidden');
-                if (!notifDropdown.classList.contains('hidden')) {
-                    unreadNotifCount = 0;
-                    updateUnreadBadge();
-                }
-            }
-        }
-        window.toggleNotificationDropdown = toggleNotificationDropdown;
-
-        function selectProfile(profileType) {
-            activeProfile = profileType;
-            const profileDisplay = document.getElementById('user-profile-type');
-            const checkAdult = document.getElementById('check-adult-profile');
-            const checkKids = document.getElementById('check-kids-profile');
-
-            if (profileDisplay) profileDisplay.textContent = `${profileType} Profile`;
-
-            if (profileType === 'Adult') {
-                if (checkAdult) checkAdult.classList.remove('hidden');
-                if (checkKids) checkKids.classList.add('hidden');
-            } else {
-                if (checkAdult) checkAdult.classList.add('hidden');
-                if (checkKids) checkKids.classList.remove('hidden');
-            }
-
-            const accountMenu = document.getElementById('account-menu');
-            if (accountMenu) accountMenu.classList.add('hidden');
-
-            showToast(`Switched to ${profileType} Profile`, "info");
-            renderCatalog();
-        }
-        window.selectProfile = selectProfile;
-
-        /* =========================================================================
-           5. AUTH MODAL & SYNCHRONIZED POPUP LOGIC
-           ========================================================================= */
-        function openAuthModal() {
-            const modal = document.getElementById('auth-modal');
-            const accountMenu = document.getElementById('account-menu');
-            if (accountMenu) accountMenu.classList.add('hidden');
-            if (modal) {
-                modal.classList.remove('hidden');
-                modal.classList.add('flex');
-            }
-        }
-        window.openAuthModal = openAuthModal;
-
-        function closeAuthModal() {
-            const modal = document.getElementById('auth-modal');
-            if (modal) {
-                modal.classList.add('hidden');
-                modal.classList.remove('flex');
-            }
-        }
-        window.closeAuthModal = closeAuthModal;
-
-        function toggleAuthMode() {
-            isAuthSignUpMode = !isAuthSignUpMode;
-            const submitBtn = document.getElementById('auth-submit-btn');
-            const toggleBtn = document.getElementById('auth-toggle-mode-btn');
-            const title = document.getElementById('auth-modal-title');
-            const subtitle = document.getElementById('auth-modal-subtitle');
-            const identifierLabel = document.getElementById('auth-identifier-label');
-
-            if (isAuthSignUpMode) {
-                if (submitBtn) submitBtn.textContent = "Create Account";
-                if (toggleBtn) toggleBtn.textContent = "Already have an account? Sign In";
-                if (title) title.textContent = "Create Hippo Pippo Account";
-                if (subtitle) subtitle.textContent = "Register with your email to stream films & sync progress.";
-                if (identifierLabel) identifierLabel.textContent = "Email Address *";
-            } else {
-                if (submitBtn) submitBtn.textContent = "Sign In";
-                if (toggleBtn) toggleBtn.textContent = "Need an account? Sign Up";
-                if (title) title.textContent = "Hippo Pippo Account Sync";
-                if (subtitle) subtitle.textContent = "Sign in to automatically sync your watch progress across all devices.";
-                if (identifierLabel) identifierLabel.textContent = "Email Address or Admin Username";
-            }
-        }
-        window.toggleAuthMode = toggleAuthMode;
-
-        async function handleAuthSubmit(event) {
-            event.preventDefault();
-            const identifierInput = document.getElementById('auth-email');
-            const passwordInput = document.getElementById('auth-password');
-
-            const identifier = identifierInput ? identifierInput.value.trim() : '';
-            const password = passwordInput ? passwordInput.value : '';
-
-            if (!identifier || !password) {
-                showToast("Please enter your login details", "error");
-                return;
-            }
-
-            // Sole admin login check: username "Eadams" (or admin email) + password "Floof2020"
-            const isAdminAttempt = identifier.toLowerCase() === VERIFIED_ADMIN.username.toLowerCase() || identifier.toLowerCase() === VERIFIED_ADMIN.email.toLowerCase();
-
-            if (isAdminAttempt) {
-                if (isAuthSignUpMode) {
-                    showToast("Admin account already exists. Switch to Sign In.", "error");
-                    return;
-                }
-                if (password === VERIFIED_ADMIN.password) {
-                    currentUser = {
-                        username: VERIFIED_ADMIN.username,
-                        email: VERIFIED_ADMIN.email,
-                        uid: 'admin-eadams',
-                        role: 'Verified Admin',
-                        isVerified: true,
-                        isAdmin: true
-                    };
-                    localStorage.setItem('hippo_auth_user', JSON.stringify(currentUser));
-                    updateUserUI();
-                    closeAuthModal();
-                    showAccountSyncedModal(`${VERIFIED_ADMIN.username} (Verified Admin)`);
-                    showToast("Logged in as Verified Admin Eadams!", "success");
-                    return;
-                } else {
-                    showToast("Incorrect password for Admin account Eadams", "error");
-                    return;
-                }
-            }
-
-            // Standard accounts must use a valid email address (no random numbers or arbitrary usernames)
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(identifier)) {
-                showToast("Enter a valid email address (only 'Eadams' can sign in by username)", "error");
-                return;
-            }
-
-            const userEmail = identifier.toLowerCase();
-            const displayUser = userEmail.split('@')[0];
-
-            currentUser = {
-                username: displayUser,
-                email: userEmail,
-                uid: 'usr-' + btoa(userEmail).replace(/[^a-zA-Z0-9]/g, '').slice(0, 12),
-                role: 'Standard User (Unverified)',
-                isVerified: false,
-                isAdmin: false
-            };
-
-            // Register in Users Database if not present
-            const existingIdx = userAccountsList.findIndex(u => u.email.toLowerCase() === currentUser.email.toLowerCase());
-            if (existingIdx === -1) {
-                userAccountsList.push(currentUser);
-            } else {
-                // Preserve existing role if previously set, defaulting to non-admin
-                currentUser.isAdmin = Boolean(userAccountsList[existingIdx].isAdmin);
-                currentUser.isVerified = Boolean(userAccountsList[existingIdx].isVerified && currentUser.isAdmin);
-                currentUser.role = currentUser.isAdmin ? 'Verified Admin' : 'Standard User (Unverified)';
-                userAccountsList[existingIdx] = currentUser;
-            }
-            localStorage.setItem('hippo_users_db', JSON.stringify(userAccountsList));
-
-            localStorage.setItem('hippo_auth_user', JSON.stringify(currentUser));
-            updateUserUI();
-            closeAuthModal();
-            showAccountSyncedModal(`${currentUser.email} — Standard User`);
-            showToast("Signed in as Standard User", "info");
-        }
-        window.handleAuthSubmit = handleAuthSubmit;
-
-        function showAccountSyncedModal(displayLabel) {
-            const modal = document.getElementById('account-synced-modal');
-            const emailSlot = document.getElementById('synced-modal-email');
-            const profileSlot = document.getElementById('synced-modal-profile');
-            
-            if (emailSlot) emailSlot.textContent = displayLabel;
-            if (profileSlot) profileSlot.textContent = `${activeProfile} Profile (${currentUser?.role || 'Standard'})`;
-            
-            if (modal) {
-                modal.classList.remove('hidden');
-                modal.classList.add('flex');
-            }
-        }
-        window.showAccountSyncedModal = showAccountSyncedModal;
-
-        function closeAccountSyncedModal() {
-            const modal = document.getElementById('account-synced-modal');
-            if (modal) {
-                modal.classList.add('hidden');
-                modal.classList.remove('flex');
-            }
-        }
-        window.closeAccountSyncedModal = closeAccountSyncedModal;
-
-        function updateUserUI() {
-            const nameDisplay = document.getElementById('user-name-display');
-            const menuEmail = document.getElementById('menu-user-email');
-            const roleBadge = document.getElementById('menu-user-role-badge');
-            const avatarBadge = document.getElementById('user-avatar-badge');
-            const authBtnLabel = document.getElementById('auth-btn-label');
-            const navAdminBtn = document.getElementById('nav-admin-btn');
-            const mobileNavAdminBtn = document.getElementById('mobile-nav-admin');
-
-            if (currentUser) {
-                const displayName = currentUser.username || currentUser.email.split('@')[0];
-                if (nameDisplay) nameDisplay.textContent = displayName;
-                if (menuEmail) menuEmail.textContent = `${displayName} (${currentUser.email})`;
-                if (avatarBadge) {
-                    avatarBadge.textContent = displayName.charAt(0).toUpperCase();
-                    if (currentUser.isAdmin) {
-                        avatarBadge.className = "w-7 h-7 rounded-lg bg-gradient-to-tr from-amber-500 to-yellow-300 text-neutral-950 font-black text-xs shadow-md flex items-center justify-center";
-                    } else {
-                        avatarBadge.className = "w-7 h-7 rounded-lg bg-gradient-to-tr from-brand-600 to-amber-500 flex items-center justify-center font-bold text-xs text-white shadow";
-                    }
-                }
-
-                if (roleBadge) {
-                    if (currentUser.isAdmin) {
-                        roleBadge.textContent = "Verified Admin ⭐";
-                        roleBadge.className = "mt-1 inline-block text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40";
-                    } else {
-                        roleBadge.textContent = "Standard User • Unverified";
-                        roleBadge.className = "mt-1 inline-block text-[10px] font-bold px-2 py-0.5 rounded bg-neutral-800 text-neutral-400 border border-neutral-700";
-                    }
-                }
-
-                if (authBtnLabel) authBtnLabel.textContent = "Switch Account / Sign Out";
-
-                // Reveal Admin tabs strictly to Verified Admin Eadams
-                if (currentUser.isAdmin) {
-                    if (navAdminBtn) navAdminBtn.classList.remove('hidden');
-                    if (mobileNavAdminBtn) mobileNavAdminBtn.classList.remove('hidden');
-                } else {
-                    if (navAdminBtn) navAdminBtn.classList.add('hidden');
-                    if (mobileNavAdminBtn) mobileNavAdminBtn.classList.add('hidden');
-                    switchTab('catalog');
-                }
-            } else {
-                if (nameDisplay) nameDisplay.textContent = "Not Signed In";
-                if (menuEmail) menuEmail.textContent = "No Active Account";
-                if (roleBadge) {
-                    roleBadge.textContent = "Account Required";
-                    roleBadge.className = "mt-1 inline-block text-[10px] font-bold px-2 py-0.5 rounded bg-neutral-800 text-neutral-400 border border-neutral-700";
-                }
-                if (avatarBadge) avatarBadge.textContent = "?";
-                if (authBtnLabel) authBtnLabel.textContent = "Sign In / Create Account";
-                
-                if (navAdminBtn) navAdminBtn.classList.add('hidden');
-                if (mobileNavAdminBtn) mobileNavAdminBtn.classList.add('hidden');
-                switchTab('catalog');
-            }
-        }
-        window.updateUserUI = updateUserUI;
-
-        /* =========================================================================
-           6. MEDIA EXTRACTION, FILE SELECTION & YOUTUBE URL HANDLING
-           ========================================================================= */
-        function handleFileSelect(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            selectedFileBlob = file;
-            customYoutubeId = null;
-
-            document.getElementById('file-name-text').textContent = file.name;
-            document.getElementById('file-size-text').textContent = `(${(file.size / (1024 * 1024)).toFixed(1)} MB)`;
-            document.getElementById('file-details-badge').classList.remove('hidden');
-
-            document.getElementById('meta-title').value = file.name.replace(/\.[^/.]+$/, "");
-
-            const fileUrl = URL.createObjectURL(file);
-            const extractor = document.getElementById('hidden-video-extractor');
-            extractor.src = fileUrl;
-
-            extractor.onloadedmetadata = () => {
-                const durSec = Math.floor(extractor.duration);
-                const mins = Math.floor(durSec / 60);
-                const secs = durSec % 60;
-                extractedDurationStr = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
-                document.getElementById('meta-duration').value = extractedDurationStr;
-
-                extractor.currentTime = Math.min(2, extractor.duration / 2);
-            };
-
-            extractor.onseeked = () => {
-                const canvas = document.getElementById('thumbnail-canvas');
-                canvas.width = 600;
-                canvas.height = 338;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(extractor, 0, 0, canvas.width, canvas.height);
-                generatedThumbnailUrl = canvas.toDataURL('image/jpeg', 0.85);
-                document.getElementById('meta-thumb-preview').src = generatedThumbnailUrl;
-            };
-        }
-        window.handleFileSelect = handleFileSelect;
-
-        function loadYouTubeMetadata() {
-            const input = document.getElementById('youtube-url-input').value.trim();
-            if (!input) {
-                showToast("Please enter a YouTube link or video ID", "error");
-                return;
-            }
-
-            let ytId = input;
-            const match = input.match(/(?:embed\/|v\/|watch\?v=|youtu\.be\/)([^#\&\?]*)/);
-            if (match && match[1]) ytId = match[1];
-
-            customYoutubeId = ytId;
-            selectedFileBlob = null;
-            generatedThumbnailUrl = `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
-
-            document.getElementById('meta-title').value = document.getElementById('meta-title').value || `YouTube Video (${ytId})`;
-            document.getElementById('meta-duration').value = "YouTube Stream";
-            document.getElementById('meta-thumb-preview').src = generatedThumbnailUrl;
-            
-            showToast("Fetched YouTube video details", "success");
-        }
-        window.loadYouTubeMetadata = loadYouTubeMetadata;
-
-        async function publishNewFilm(event) {
-            event.preventDefault();
-
-            if (!currentUser || !currentUser.isAdmin) {
-                showToast("Film upload is strictly restricted to Verified Admin Eadams", "error");
-                return;
-            }
-
-            const title = document.getElementById('meta-title').value.trim();
-            const genre = document.getElementById('meta-genre').value;
-            const duration = document.getElementById('meta-duration').value || 'Unknown';
-            const desc = document.getElementById('meta-desc').value.trim() || 'No description provided.';
-
-            if (!title) {
-                showToast("Please provide a film title", "error");
-                return;
-            }
-
-            let newFilm = {
-                id: 'film-' + Date.now(),
-                title,
-                genre,
-                duration,
-                desc,
-                thumbnail: generatedThumbnailUrl || 'https://placehold.co/600x400/18181b/ffffff?text=Video+Stream',
-                timestamp: Date.now()
-            };
-
-            if (customYoutubeId) {
-                newFilm.youtubeId = customYoutubeId;
-                newFilm.videoUrl = `https://www.youtube.com/embed/${customYoutubeId}?autoplay=1`;
-                newFilm.sourceType = 'YouTube Stream';
-            } else if (selectedFileBlob) {
-                newFilm.videoUrl = URL.createObjectURL(selectedFileBlob);
-                newFilm.sourceType = 'Uploaded Local File';
-            } else {
-                newFilm.videoUrl = 'https://www.w3schools.com/html/mov_bbb.mp4';
-                newFilm.sourceType = 'Sample Stream';
-            }
-
-            saveLocalCatalog(newFilm);
-
-            document.getElementById('upload-form').reset();
-            document.getElementById('file-details-badge').classList.add('hidden');
-            document.getElementById('meta-thumb-preview').src = 'https://placehold.co/600x400/18181b/ffffff?text=No+Thumbnail+Generated';
-            selectedFileBlob = null;
-            customYoutubeId = null;
-
-            switchTab('catalog');
-        }
-        window.publishNewFilm = publishNewFilm;
-
-        function saveLocalCatalog(film) {
-            filmCatalog.unshift(film);
-            localStorage.setItem('hippo_catalog', JSON.stringify(filmCatalog));
-            if (broadcastChannel) {
-                broadcastChannel.postMessage({ type: 'CATALOG_UPDATE', data: filmCatalog });
-            }
-            updateCatalogViews();
-            showToast("New film added to local sync catalog!", "success");
-        }
-        window.saveLocalCatalog = saveLocalCatalog;
-
-        /* =========================================================================
-           7. BROADCAST ANNOUNCEMENTS & TOAST NOTIFICATIONS
-           ========================================================================= */
-        async function sendGlobalBroadcast(event) {
-            event.preventDefault();
-
-            if (!currentUser || !currentUser.isAdmin) {
-                showToast("Global notifications dispatch restricted to Verified Admin Eadams", "error");
-                return;
-            }
-
-            const input = document.getElementById('broadcast-message-input');
-            const message = input ? input.value.trim() : '';
-            if (!message) return;
-
-            const notif = {
-                id: 'notif-' + Date.now(),
-                message,
-                timestamp: new Date().toLocaleTimeString()
-            };
-
-            if (broadcastChannel) {
-                broadcastChannel.postMessage({ type: 'NEW_NOTIFICATION', data: notif });
-            }
-
-            addNotificationToState(notif, true);
-
-            if (input) input.value = '';
-            showToast("Broadcast message dispatched globally!", "success");
-        }
-        window.sendGlobalBroadcast = sendGlobalBroadcast;
-
-        function addNotificationToState(notif, shouldNotify = true) {
-            broadcastNotifications.unshift(notif);
-            unreadNotifCount++;
-            updateUnreadBadge();
-            renderNotifications();
-            if (shouldNotify) {
-                showToast(notif.message, "info");
-            }
-        }
-        window.addNotificationToState = addNotificationToState;
-
-        function updateUnreadBadge() {
-            const badge = document.getElementById('unread-notif-badge');
-            const countText = document.getElementById('notif-count-text');
-            if (badge) {
-                if (unreadNotifCount > 0) {
-                    badge.textContent = unreadNotifCount;
-                    badge.classList.remove('hidden');
-                } else {
-                    badge.classList.add('hidden');
-                }
-            }
-            if (countText) countText.textContent = `${broadcastNotifications.length} messages`;
-        }
-        window.updateUnreadBadge = updateUnreadBadge;
-
-        function renderNotifications() {
-            const list = document.getElementById('notification-list');
-            if (!list) return;
-
-            if (broadcastNotifications.length === 0) {
-                list.innerHTML = `<div class="text-center py-6 text-xs text-neutral-500">No broadcast announcements yet.</div>`;
-                return;
-            }
-
-            list.innerHTML = broadcastNotifications.map(n => `
-                <div class="p-2.5 bg-neutral-950 border border-neutral-800 rounded-xl space-y-1">
-                    <div class="flex items-center justify-between text-[10px] text-neutral-400">
-                        <span class="font-bold text-brand-400"><i class="fa-solid fa-bullhorn"></i> Announcement</span>
-                        <span>${n.timestamp}</span>
-                    </div>
-                    <p class="text-xs text-neutral-200 leading-normal">${n.message}</p>
-                </div>
-            `).join('');
-        }
-        window.renderNotifications = renderNotifications;
-
-        function showToast(message, type = "info") {
+        // Global functions exposed to window
+        window.showToast = function(message, type = 'info') {
             const container = document.getElementById('toast-container');
-            if (!container) return;
-
+            if(!container) return;
             const toast = document.createElement('div');
-            const bgClass = type === "error" ? "bg-red-950 border-red-800 text-red-200" :
-                            type === "success" ? "bg-emerald-950 border-emerald-800 text-emerald-200" :
-                            "bg-neutral-900 border-neutral-700 text-neutral-100";
-
-            toast.className = `pointer-events-auto px-4 py-3 rounded-xl border text-xs font-medium shadow-2xl transition-all duration-300 flex items-center gap-2 ${bgClass}`;
-            toast.innerHTML = `<i class="fa-solid fa-circle-info"></i> <span>${message}</span>`;
-
+            const bgClass = type === 'error' ? 'bg-red-600' : (type === 'success' ? 'bg-emerald-600' : 'bg-brand-600');
+            toast.className = `${bgClass} text-white px-4 py-2.5 rounded-xl text-xs font-bold shadow-2xl flex items-center space-x-2 transition-all duration-300 transform translate-y-2 opacity-0`;
+            toast.innerHTML = `<i class="fa-solid fa-circle-info"></i><span>${message}</span>`;
             container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+
             setTimeout(() => {
                 toast.classList.add('opacity-0', 'translate-y-2');
                 setTimeout(() => toast.remove(), 300);
             }, 3500);
-        }
-        window.showToast = showToast;
+        };
 
-        /* =========================================================================
-           8. DEMO SEED, USER DB & CATALOG MANAGEMENT
-           ========================================================================= */
-        function triggerSampleSeed() {
-            if (!currentUser || !currentUser.isAdmin) {
-                showToast("Demo seeding restricted to Verified Admin Eadams", "error");
+        window.toggleProfileMenu = function() {
+            const menu = document.getElementById('profile-dropdown');
+            menu.classList.toggle('hidden');
+        };
+
+        window.closeLoginModal = function() {
+            document.getElementById('login-modal').classList.add('hidden');
+        };
+
+        window.openLoginModal = function() {
+            document.getElementById('profile-dropdown').classList.add('hidden');
+            document.getElementById('login-modal').classList.remove('hidden');
+        };
+
+        window.pendingProfileSelection = null;
+
+        window.switchProfile = function(name, avatar, role) {
+            document.getElementById('profile-dropdown').classList.add('hidden');
+
+            if (role === 'admin' || role === 'coadmin') {
+                window.pendingProfileSelection = { name, avatar, role };
+                window.openPasswordModal(`Password required to log in as ${name}.`);
                 return;
             }
-            filmCatalog = [...SAMPLE_MOVIES];
-            localStorage.setItem('hippo_catalog', JSON.stringify(filmCatalog));
-            if (broadcastChannel) {
-                broadcastChannel.postMessage({ type: 'CATALOG_UPDATE', data: filmCatalog });
-            }
-            updateCatalogViews();
-            showToast("Demo YouTube movie library loaded!", "success");
-        }
-        window.triggerSampleSeed = triggerSampleSeed;
 
-        function clearAllFilms() {
-            if (!currentUser || !currentUser.isAdmin) {
-                showToast("Catalog clearing restricted to Verified Admin Eadams", "error");
-                return;
-            }
-            filmCatalog = [];
-            localStorage.removeItem('hippo_catalog');
-            if (broadcastChannel) {
-                broadcastChannel.postMessage({ type: 'CATALOG_UPDATE', data: filmCatalog });
-            }
-            updateCatalogViews();
-            showToast("Catalog cleared", "info");
-        }
-        window.clearAllFilms = clearAllFilms;
+            window.state.currentUser = name;
+            window.state.userAvatar = avatar;
+            window.state.role = role;
+            window.state.isAdmin = false;
+            updateProfileUI();
+            window.showToast(`Switched account profile to: ${name}`);
+        };
 
-        function renderAdminTable() {
-            const tableBody = document.getElementById('users-table-body');
-            const userCountBadge = document.getElementById('user-count-badge');
-            if (!tableBody) return;
+        window.executeLogin = function(name, avatar, role) {
+            window.closeLoginModal();
+            window.switchProfile(name, avatar, role);
+        };
 
-            const allUsers = [
-                { username: VERIFIED_ADMIN.username, email: VERIFIED_ADMIN.email, uid: 'admin-eadams', role: 'Verified Admin ⭐', isAdmin: true },
-                ...userAccountsList
-            ];
+        window.handleFormLogin = function(e) {
+            e.preventDefault();
+            const username = document.getElementById('login-input-username').value.trim();
+            const pin = document.getElementById('login-input-pin').value.trim();
 
-            if (userCountBadge) userCountBadge.textContent = `${allUsers.length} Accounts`;
+            if (!username) return;
 
-            tableBody.innerHTML = allUsers.map(user => `
-                <tr class="hover:bg-neutral-900/60 transition">
-                    <td class="p-3 font-semibold text-white flex items-center gap-2">
-                        <i class="fa-solid ${user.isAdmin ? 'fa-user-shield text-amber-400' : 'fa-user text-neutral-400'}"></i>
-                        <span>${user.username}</span>
-                    </td>
-                    <td class="p-3 text-neutral-400">${user.email}</td>
-                    <td class="p-3 text-neutral-500 text-[11px]">${user.uid}</td>
-                    <td class="p-3">
-                        <span class="px-2 py-0.5 rounded text-[10px] font-bold ${user.isAdmin ? 'bg-amber-950 text-amber-300 border border-amber-700/50' : 'bg-neutral-800 text-neutral-400'}">
-                            ${user.isAdmin ? 'Verified Admin ⭐' : 'Standard User'}
-                        </span>
-                    </td>
-                    <td class="p-3 text-right">
-                        ${user.uid === 'admin-eadams' ? '<span class="text-[10px] text-neutral-500 italic">Primary Admin</span>' : `
-                            <button onclick="toggleUserAdminRole('${user.uid}')" class="px-2 py-1 rounded bg-neutral-800 hover:bg-neutral-700 text-[10px] text-neutral-200">
-                                ${user.isAdmin ? 'Revoke Admin' : 'Make Admin'}
-                            </button>
-                        `}
-                    </td>
-                </tr>
-            `).join('');
-        }
-        window.renderAdminTable = renderAdminTable;
-
-        function toggleUserAdminRole(uid) {
-            const user = userAccountsList.find(u => u.uid === uid);
-            if (user) {
-                user.isAdmin = !user.isAdmin;
-                user.role = user.isAdmin ? 'Verified Admin' : 'Standard User';
-                localStorage.setItem('hippo_users_db', JSON.stringify(userAccountsList));
-                renderAdminTable();
-                showToast(`Updated admin role for ${user.username}`, "info");
-            }
-        }
-        window.toggleUserAdminRole = toggleUserAdminRole;
-
-        /* =========================================================================
-           9. APP INITIALIZATION & FIREBASE LISTENERS
-           ========================================================================= */
-        window.addEventListener('DOMContentLoaded', () => {
-            // Restore persistent user accounts database
-            const savedUsers = localStorage.getItem('hippo_users_db');
-            if (savedUsers) {
-                try { userAccountsList = JSON.parse(savedUsers); } catch(e) {}
-            }
-
-            // Restore persistent auth user if signed in locally
-            const savedUser = localStorage.getItem('hippo_auth_user');
-            if (savedUser) {
-                try {
-                    currentUser = JSON.parse(savedUser);
-                    updateUserUI();
-                } catch(e) {}
-            }
-
-            // Load persistent local catalog if available
-            const saved = localStorage.getItem('hippo_catalog');
-            if (saved) {
-                try {
-                    filmCatalog = JSON.parse(saved);
-                } catch (e) {
-                    filmCatalog = [...SAMPLE_MOVIES];
+            const isReqAdmin = username.toLowerCase().includes('admin') || username.toLowerCase().includes('daniel');
+            
+            if (isReqAdmin) {
+                if (pin === 'Hippo') {
+                    const roleName = username.toLowerCase().includes('daniel') ? 'Daniel (Co-Admin)' : 'Admin Master';
+                    const avatarChar = username.charAt(0).toUpperCase();
+                    const roleType = username.toLowerCase().includes('daniel') ? 'coadmin' : 'admin';
+                    
+                    window.state.currentUser = roleName;
+                    window.state.userAvatar = avatarChar;
+                    window.state.role = roleType;
+                    window.state.isAdmin = true;
+                    updateProfileUI();
+                    window.closeLoginModal();
+                    window.showToast(`Logged in successfully as ${roleName}!`, 'success');
+                } else {
+                    window.showToast('Invalid passcode! Use "Hippo" for Admin access.', 'error');
                 }
             } else {
-                filmCatalog = [...SAMPLE_MOVIES];
+                window.state.currentUser = username;
+                window.state.userAvatar = username.charAt(0).toUpperCase();
+                window.state.role = 'viewer';
+                window.state.isAdmin = false;
+                updateProfileUI();
+                window.closeLoginModal();
+                window.showToast(`Logged in as ${username}`, 'success');
+            }
+        };
+
+        function updateProfileUI() {
+            document.getElementById('profile-avatar').textContent = window.state.userAvatar;
+            document.getElementById('current-user-display').textContent = window.state.currentUser;
+            
+            const badge = document.getElementById('user-role-badge');
+            const adminBtn = document.getElementById('admin-badge-btn');
+            
+            if (window.state.isAdmin) {
+                badge.textContent = window.state.role === 'admin' ? 'ADMIN' : 'CO-ADMIN';
+                badge.className = 'text-[10px] font-bold px-2 py-0.5 rounded bg-brand-600/30 text-brand-400 border border-brand-500/30';
+                if(adminBtn) adminBtn.classList.remove('hidden');
+            } else {
+                badge.textContent = window.state.role === 'coadmin' ? 'CO-ADMIN' : (window.state.role === 'viewer' ? 'VIEWER' : 'GUEST');
+                badge.className = 'text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700';
+                if(adminBtn) adminBtn.classList.add('hidden');
             }
 
-            updateCatalogViews();
-
-            // Prompt for account authentication if no active user session exists
-            if (!currentUser) {
-                setTimeout(() => openAuthModal(), 500);
+            // Guard against admin panel remaining open when switching to viewer
+            if (!window.state.isAdmin) {
+                const modal = document.getElementById('admin-modal');
+                if (modal && !modal.classList.contains('hidden')) {
+                    modal.classList.add('hidden');
+                }
             }
-        });
+        }
+
+        window.openPasswordModal = function(promptText = null) {
+            const sub = document.getElementById('password-prompt-subtitle');
+            if (sub) {
+                sub.textContent = promptText || 'Please enter the password to access Admin controls.';
+            }
+            document.getElementById('admin-passcode-input').value = '';
+            document.getElementById('password-modal').classList.remove('hidden');
+            setTimeout(() => {
+                document.getElementById('admin-passcode-input').focus();
+            }, 100);
+        };
+
+        window.closePasswordModal = function() {
+            document.getElementById('password-modal').classList.add('hidden');
+            window.pendingProfileSelection = null;
+        };
+
+        window.handlePasswordSubmit = function(e) {
+            e.preventDefault();
+            const pass = document.getElementById('admin-passcode-input').value.trim();
+
+            if (pass === 'Hippo') {
+                window.closePasswordModal();
+                if (window.pendingProfileSelection) {
+                    const { name, avatar, role } = window.pendingProfileSelection;
+                    window.state.currentUser = name;
+                    window.state.userAvatar = avatar;
+                    window.state.role = role;
+                    window.state.isAdmin = true;
+                    window.pendingProfileSelection = null;
+                    updateProfileUI();
+                    window.showToast(`Authenticated! Logged in as ${name}`, 'success');
+                } else {
+                    // Direct click on Admin Studio button when not authenticated yet
+                    window.state.isAdmin = true;
+                    if (window.state.role === 'viewer' || window.state.role === 'guest') {
+                        window.state.role = 'admin';
+                        window.state.currentUser = 'Admin Master';
+                        window.state.userAvatar = 'A';
+                    }
+                    updateProfileUI();
+                    window.toggleAdminPanel();
+                    window.showToast('Admin Access Granted!', 'success');
+                }
+            } else {
+                window.showToast('Incorrect password! Access denied.', 'error');
+            }
+        };
+
+        window.toggleAdminPanel = function() {
+            if (!window.state.isAdmin) {
+                window.openPasswordModal('Enter Admin password to access Studio Controls.');
+                return;
+            }
+
+            const modal = document.getElementById('admin-modal');
+            modal.classList.toggle('hidden');
+            if (!modal.classList.contains('hidden')) {
+                window.renderAdminVideoList();
+                window.renderCoAdminList();
+            }
+        };
+
+        window.switchAdminTab = function(tabName) {
+            const tabs = ['add-video', 'manage-videos', 'co-admins'];
+            tabs.forEach(t => {
+                const el = document.getElementById(`admin-tab-${t}`);
+                if (el) el.classList.add('hidden');
+            });
+
+            const activeEl = document.getElementById(`admin-tab-${tabName}`);
+            if (activeEl) activeEl.classList.remove('hidden');
+
+            document.getElementById('tab-btn-add').className = tabName === 'add-video' 
+                ? 'py-3 px-4 text-xs font-bold border-b-2 border-brand-500 text-white transition-colors' 
+                : 'py-3 px-4 text-xs font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition-colors';
+
+            document.getElementById('tab-btn-manage').className = tabName === 'manage-videos' 
+                ? 'py-3 px-4 text-xs font-bold border-b-2 border-brand-500 text-white transition-colors' 
+                : 'py-3 px-4 text-xs font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition-colors';
+
+            document.getElementById('tab-btn-coadmin').className = tabName === 'co-admins' 
+                ? 'py-3 px-4 text-xs font-bold border-b-2 border-brand-500 text-white transition-colors' 
+                : 'py-3 px-4 text-xs font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition-colors';
+        };
+
+        window.resetVideoForm = function() {
+            document.getElementById('edit-video-id').value = '';
+            document.getElementById('video-form').reset();
+            document.getElementById('v-rating').value = '4.8';
+            document.getElementById('admin-form-title-tab').textContent = 'Add New Video';
+            document.getElementById('save-btn-text').textContent = 'Publish Live & Sync';
+        };
+
+        window.handleSaveVideo = async function(e) {
+            e.preventDefault();
+            if (!window.state.isAdmin) {
+                window.showToast('Unauthorized operation! Only admins can edit/add videos.', 'error');
+                return;
+            }
+
+            const editId = document.getElementById('edit-video-id').value;
+            const videoData = {
+                title: document.getElementById('v-title').value.trim(),
+                category: document.getElementById('v-category').value,
+                videoUrl: document.getElementById('v-videoUrl').value.trim(),
+                thumbnail: document.getElementById('v-thumbnail').value.trim(),
+                genre: document.getElementById('v-genre').value.trim() || 'General',
+                badge: document.getElementById('v-badge').value,
+                rating: parseFloat(document.getElementById('v-rating').value) || 4.5,
+                description: document.getElementById('v-description').value.trim() || 'No description provided.',
+                isFeatured: document.getElementById('v-isFeatured').checked,
+                createdAt: new Date().toISOString()
+            };
+
+            const videosCol = collection(db, `artifacts/${appId}/public/data/videos`);
+
+            try {
+                if (editId) {
+                    await updateDoc(doc(videosCol, editId), videoData);
+                    window.showToast('Stream updated and synced across all devices!', 'success');
+                } else {
+                    if (videoData.isFeatured) {
+                        window.state.videos.forEach(async (v) => {
+                            if (v.isFeatured) {
+                                await updateDoc(doc(videosCol, v.id), { isFeatured: false });
+                            }
+                        });
+                    }
+                    await addDoc(videosCol, videoData);
+                    window.showToast('New stream published live across all devices!', 'success');
+                }
+                window.resetVideoForm();
+                window.switchAdminTab('manage-videos');
+            } catch (err) {
+                console.error("Firestore Save Error:", err);
+                window.showToast('Failed to save to cloud storage.', 'error');
+            }
+        };
+
+        window.editVideo = function(id) {
+            const v = window.state.videos.find(item => item.id === id);
+            if (!v) return;
+
+            document.getElementById('edit-video-id').value = v.id;
+            document.getElementById('v-title').value = v.title;
+            document.getElementById('v-category').value = v.category;
+            document.getElementById('v-videoUrl').value = v.videoUrl;
+            document.getElementById('v-thumbnail').value = v.thumbnail;
+            document.getElementById('v-genre').value = v.genre;
+            document.getElementById('v-badge').value = v.badge;
+            document.getElementById('v-rating').value = v.rating;
+            document.getElementById('v-description').value = v.description;
+            document.getElementById('v-isFeatured').checked = !!v.isFeatured;
+
+            document.getElementById('admin-form-title-tab').textContent = 'Edit Stream';
+            document.getElementById('save-btn-text').textContent = 'Update Live Video';
+
+            window.switchAdminTab('add-video');
+        };
+
+        window.deleteVideo = async function(id) {
+            if (!window.state.isAdmin) return;
+            try {
+                const videosCol = collection(db, `artifacts/${appId}/public/data/videos`);
+                await deleteDoc(doc(videosCol, id));
+                window.showToast('Stream removed from live catalog.', 'info');
+            } catch (err) {
+                console.error("Delete error:", err);
+                window.showToast('Could not delete stream.', 'error');
+            }
+        };
+
+        window.renderAdminVideoList = function() {
+            const container = document.getElementById('admin-video-list-container');
+            document.getElementById('admin-video-count').textContent = window.state.videos.length;
+
+            if (window.state.videos.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-500 py-4 text-center">No video streams found in the database.</p>`;
+                return;
+            }
+
+            container.innerHTML = window.state.videos.map(v => `
+                <div class="flex items-center justify-between p-3 rounded-2xl bg-dark-950 border border-slate-800 hover:border-slate-700 transition-all">
+                    <div class="flex items-center space-x-3 truncate">
+                        <img src="${v.thumbnail}" onerror="this.src='https://placehold.co/100x60/181b28/ffffff?text=Video'" class="w-14 h-10 object-cover rounded-lg">
+                        <div class="truncate">
+                            <h4 class="text-xs font-bold text-white truncate flex items-center space-x-2">
+                                <span>${v.title}</span>
+                                ${v.isFeatured ? '<span class="text-[9px] bg-brand-600/30 text-brand-400 border border-brand-500/30 px-1.5 py-0.2 rounded font-semibold">FEATURED HERO</span>' : ''}
+                            </h4>
+                            <p class="text-[10px] text-slate-400">${v.category} • ${v.genre} • ★ ${v.rating}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2 shrink-0">
+                        <button onclick="editVideo('${v.id}')" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-colors">
+                            <i class="fa-solid fa-pen-to-square"></i>
+                        </button>
+                        <button onclick="deleteVideo('${v.id}')" class="px-2.5 py-1 rounded-lg bg-red-950/60 hover:bg-red-900 border border-red-800/40 text-red-400 text-xs font-bold transition-colors">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        };
+
+        window.addCoAdmin = function() {
+            const input = document.getElementById('new-coadmin-name');
+            const name = input.value.trim();
+            if (!name) return;
+
+            window.state.coAdmins.push(name);
+            input.value = '';
+            window.renderCoAdminList();
+            window.showToast(`Added ${name} as a Co-Admin!`, 'success');
+        };
+
+        window.renderCoAdminList = function() {
+            const container = document.getElementById('coadmin-list');
+            container.innerHTML = window.state.coAdmins.map(ca => `
+                <div class="flex items-center justify-between p-3 rounded-xl bg-dark-950 border border-slate-800">
+                    <div class="flex items-center space-x-2.5">
+                        <div class="w-7 h-7 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-xs">
+                            ${ca.charAt(0)}
+                        </div>
+                        <span class="text-xs font-bold text-slate-200">${ca}</span>
+                    </div>
+                    <span class="text-[10px] bg-amber-500/20 text-amber-300 font-bold px-2 py-0.5 rounded">CO-ADMIN</span>
+                </div>
+            `).join('');
+        };
+
+        window.playVideo = function(id) {
+            const v = window.state.videos.find(item => item.id === id);
+            if (!v) return;
+
+            const modal = document.getElementById('player-modal');
+            const html5Player = document.getElementById('html5-player');
+            const iframePlayer = document.getElementById('iframe-player');
+            const videoSource = document.getElementById('video-source');
+
+            document.getElementById('player-title').textContent = v.title;
+            document.getElementById('player-category').textContent = `${v.category} • ${v.genre}`;
+            document.getElementById('player-badge').textContent = v.badge;
+            document.getElementById('player-description').textContent = v.description;
+
+            if (v.videoUrl.includes('youtube.com') || v.videoUrl.includes('youtu.be') || v.videoUrl.includes('vimeo.com')) {
+                html5Player.classList.add('hidden');
+                html5Player.pause();
+                
+                let embedUrl = v.videoUrl;
+                if (v.videoUrl.includes('watch?v=')) {
+                    embedUrl = v.videoUrl.replace('watch?v=', 'embed/');
+                }
+                iframePlayer.src = embedUrl;
+                iframePlayer.classList.remove('hidden');
+            } else {
+                iframePlayer.classList.add('hidden');
+                iframePlayer.src = '';
+
+                videoSource.src = v.videoUrl;
+                html5Player.load();
+                html5Player.classList.remove('hidden');
+                html5Player.play().catch(e => console.log("Autoplay prevented:", e));
+            }
+
+            modal.classList.remove('hidden');
+        };
+
+        window.closeVideoPlayer = function() {
+            const modal = document.getElementById('player-modal');
+            const html5Player = document.getElementById('html5-player');
+            const iframePlayer = document.getElementById('iframe-player');
+
+            html5Player.pause();
+            iframePlayer.src = '';
+            modal.classList.add('hidden');
+        };
+
+        window.toggleFavorite = function(id, event) {
+            if (event) event.stopPropagation();
+
+            if (window.state.myFavorites.has(id)) {
+                window.state.myFavorites.delete(id);
+                window.showToast('Removed from My Favorites', 'info');
+            } else {
+                window.state.myFavorites.add(id);
+                window.showToast('Saved to My Favorites!', 'success');
+            }
+
+            renderApp();
+        };
+
+        window.toggleMyListOnly = function() {
+            window.state.myListOnly = !window.state.myListOnly;
+            const btn = document.getElementById('my-list-nav-btn');
+            if (window.state.myListOnly) {
+                btn.classList.add('text-brand-500');
+            } else {
+                btn.classList.remove('text-brand-500');
+            }
+            renderApp();
+        };
+
+        window.filterCategory = function(cat) {
+            window.state.selectedCategory = cat;
+            window.state.myListOnly = false;
+            document.getElementById('my-list-nav-btn').classList.remove('text-brand-500');
+            renderApp();
+        };
+
+        window.handleSearch = function(query) {
+            window.state.searchQuery = query.toLowerCase().trim();
+            const clearBtn = document.getElementById('clear-search-btn');
+            if (window.state.searchQuery) {
+                clearBtn.classList.remove('hidden');
+            } else {
+                clearBtn.classList.add('hidden');
+            }
+            renderApp();
+        };
+
+        window.clearSearch = function() {
+            document.getElementById('search-input').value = '';
+            window.handleSearch('');
+        };
+
+        window.clearSearchAndFilters = function() {
+            window.clearSearch();
+            window.state.selectedCategory = 'All';
+            window.state.myListOnly = false;
+            document.getElementById('my-list-nav-btn').classList.remove('text-brand-500');
+            renderApp();
+        };
+
+        window.toggleSubscriptionStatus = function() {
+            window.state.isSubscribed = !window.state.isSubscribed;
+            const badge = document.getElementById('sub-status-badge');
+            if (window.state.isSubscribed) {
+                badge.textContent = 'HIPPO PREMIUM';
+                badge.className = 'cursor-pointer text-[10px] font-bold px-2 py-0.5 rounded-full bg-brand-500/20 text-brand-400 border border-brand-500/30 hover:bg-brand-500 hover:text-white transition-all';
+                window.showToast('Subscription active: Hippo Premium', 'success');
+            } else {
+                badge.textContent = 'FREE TIER';
+                badge.className = 'cursor-pointer text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700 hover:bg-slate-700 transition-all';
+                window.showToast('Switched to Free Tier', 'info');
+            }
+        };
+
+        window.copyShareLink = function() {
+            const dummy = document.createElement('input');
+            dummy.value = window.location.href;
+            document.body.appendChild(dummy);
+            dummy.select();
+            document.execCommand('copy');
+            document.body.removeChild(dummy);
+            window.showToast('Shareable link copied to clipboard!', 'success');
+        };
+
+        window.showHome = function() {
+            window.clearSearchAndFilters();
+        };
+
+        // Render Hero Banner
+        function renderHeroBanner() {
+            const heroContainer = document.getElementById('hero-banner');
+            if (!heroContainer) return;
+
+            let heroVideo = window.state.videos.find(v => v.isFeatured);
+            if (!heroVideo && window.state.videos.length > 0) {
+                heroVideo = window.state.videos[0];
+            }
+
+            if (!heroVideo) {
+                heroContainer.innerHTML = '';
+                return;
+            }
+
+            const isFav = window.state.myFavorites.has(heroVideo.id);
+
+            heroContainer.innerHTML = `
+                <div class="relative w-full rounded-3xl overflow-hidden shadow-2xl border border-slate-800/80 group">
+                    <div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105" style="background-image: url('${heroVideo.thumbnail}');"></div>
+                    <div class="absolute inset-0 hero-gradient"></div>
+                    
+                    <div class="relative z-10 p-6 sm:p-10 md:p-14 max-w-2xl space-y-4">
+                        <div class="flex items-center space-x-2">
+                            <span class="px-3 py-1 rounded-full bg-brand-600 text-white font-extrabold text-[10px] tracking-widest uppercase shadow-md shadow-brand-600/40">
+                                ${heroVideo.badge || 'FEATURED'}
+                            </span>
+                            <span class="text-xs font-bold text-amber-400 flex items-center space-x-1 bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-full">
+                                <i class="fa-solid fa-star"></i>
+                                <span>${heroVideo.rating}</span>
+                            </span>
+                            <span class="text-xs font-medium text-slate-300 bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-full">
+                                ${heroVideo.genre}
+                            </span>
+                        </div>
+
+                        <h1 class="text-2xl sm:text-4xl md:text-5xl font-black text-white tracking-tight leading-tight drop-shadow-md">
+                            ${heroVideo.title}
+                        </h1>
+
+                        <p class="text-xs sm:text-sm text-slate-300 line-clamp-3 leading-relaxed drop-shadow">
+                            ${heroVideo.description}
+                        </p>
+
+                        <div class="flex items-center space-x-3 pt-2">
+                            <button onclick="playVideo('${heroVideo.id}')" class="px-6 py-3 rounded-2xl bg-gradient-to-r from-brand-600 to-brand-500 hover:brightness-110 text-white font-extrabold text-xs sm:text-sm shadow-xl shadow-brand-600/30 transition-all flex items-center space-x-2.5">
+                                <i class="fa-solid fa-play text-base"></i>
+                                <span>Watch Now</span>
+                            </button>
+                            <button onclick="toggleFavorite('${heroVideo.id}', event)" class="px-4 py-3 rounded-2xl bg-white/10 hover:bg-white/20 backdrop-blur-md text-white font-bold text-xs sm:text-sm transition-all border border-white/10 flex items-center space-x-2">
+                                <i class="${isFav ? 'fa-solid text-brand-500' : 'fa-regular'} fa-bookmark"></i>
+                                <span class="hidden sm:inline">${isFav ? 'Saved' : 'My List'}</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Render Video Cards & Categories
+        function renderApp() {
+            renderHeroBanner();
+
+            const container = document.getElementById('categories-container');
+            const filterHeader = document.getElementById('filter-active-header');
+
+            let filtered = [...window.state.videos];
+
+            if (window.state.selectedCategory !== 'All') {
+                filtered = filtered.filter(v => v.category === window.state.selectedCategory);
+            }
+
+            if (window.state.myListOnly) {
+                filtered = filtered.filter(v => window.state.myFavorites.has(v.id));
+            }
+
+            if (window.state.searchQuery) {
+                const q = window.state.searchQuery;
+                filtered = filtered.filter(v => 
+                    v.title.toLowerCase().includes(q) || 
+                    v.genre.toLowerCase().includes(q) ||
+                    v.category.toLowerCase().includes(q) ||
+                    v.description.toLowerCase().includes(q)
+                );
+            }
+
+            if (window.state.selectedCategory !== 'All' || window.state.myListOnly || window.state.searchQuery) {
+                filterHeader.classList.remove('hidden');
+                document.getElementById('filter-count-badge').textContent = filtered.length;
+                let filterLabel = 'Results';
+                if (window.state.myListOnly) filterLabel = 'My Favorites Catalog';
+                else if (window.state.selectedCategory !== 'All') filterLabel = `Category: ${window.state.selectedCategory}`;
+                if (window.state.searchQuery) filterLabel += ` (Search: "${window.state.searchQuery}")`;
+                document.getElementById('filter-title-text').textContent = filterLabel;
+            } else {
+                filterHeader.classList.add('hidden');
+            }
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="py-16 text-center space-y-3">
+                        <div class="w-16 h-16 rounded-3xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-500 text-2xl mx-auto">
+                            <i class="fa-solid fa-film"></i>
+                        </div>
+                        <h3 class="text-base font-bold text-slate-300">No Videos Found</h3>
+                        <p class="text-xs text-slate-500 max-w-sm mx-auto">Try adjusting your search filters or browse other categories.</p>
+                        <button onclick="clearSearchAndFilters()" class="px-4 py-2 bg-brand-600/20 text-brand-400 border border-brand-500/30 text-xs font-bold rounded-xl hover:bg-brand-600 hover:text-white transition-all">
+                            Reset Filters
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
+            if (window.state.selectedCategory !== 'All' || window.state.myListOnly || window.state.searchQuery) {
+                container.innerHTML = `
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                        ${filtered.map(v => createVideoCardHTML(v)).join('')}
+                    </div>
+                `;
+            } else {
+                const categories = ['Originals', 'Movies', 'Shows', 'Trending'];
+                container.innerHTML = categories.map(cat => {
+                    const catVideos = filtered.filter(v => v.category === cat);
+                    if (catVideos.length === 0) return '';
+
+                    const categoryTitles = {
+                        'Originals': 'Hippo Originals Showcase',
+                        'Movies': 'Feature Length Blockbusters',
+                        'Shows': 'Binge-Worthy TV Series',
+                        'Trending': 'Trending Across Devices'
+                    };
+
+                    return `
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between border-b border-slate-800/80 pb-2">
+                                <div class="flex items-center space-x-2">
+                                    <h2 class="text-lg font-black text-white tracking-wide">${categoryTitles[cat] || cat}</h2>
+                                    <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-slate-800 text-slate-400">${catVideos.length}</span>
+                                </div>
+                                <button onclick="filterCategory('${cat}')" class="text-xs font-bold text-brand-500 hover:text-brand-400 flex items-center space-x-1 transition-colors">
+                                    <span>View All</span>
+                                    <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                                </button>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                                ${catVideos.map(v => createVideoCardHTML(v)).join('')}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+
+        function createVideoCardHTML(v) {
+            const isFav = window.state.myFavorites.has(v.id);
+            return `
+                <div onclick="playVideo('${v.id}')" class="group relative bg-dark-900 border border-slate-800/80 rounded-2xl overflow-hidden cursor-pointer hover:border-brand-500/50 transition-all duration-300 card-glow flex flex-col justify-between">
+                    <div>
+                        <div class="relative aspect-video w-full overflow-hidden bg-dark-950">
+                            <img src="${v.thumbnail}" onerror="this.src='https://placehold.co/600x350/181b28/ffffff?text=Stream+Thumbnail'" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                            <div class="absolute inset-0 bg-gradient-to-t from-dark-950 via-transparent to-black/30 opacity-80 group-hover:opacity-40 transition-opacity"></div>
+                            
+                            <span class="absolute top-3 left-3 px-2 py-0.5 rounded-md bg-dark-950/80 backdrop-blur-md text-white font-extrabold text-[9px] border border-white/10 uppercase">
+                                ${v.badge || 'HD'}
+                            </span>
+
+                            <button onclick="toggleFavorite('${v.id}', event)" class="absolute top-3 right-3 w-8 h-8 rounded-full bg-dark-950/70 backdrop-blur-md text-white flex items-center justify-center hover:bg-brand-600 transition-colors border border-white/10">
+                                <i class="${isFav ? 'fa-solid text-brand-500' : 'fa-regular'} fa-bookmark text-xs"></i>
+                            </button>
+
+                            <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                <div class="w-12 h-12 rounded-full bg-brand-600 text-white flex items-center justify-center shadow-lg shadow-brand-600/50 transform scale-75 group-hover:scale-100 transition-transform duration-300">
+                                    <i class="fa-solid fa-play ml-1"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="p-4 space-y-1.5">
+                            <div class="flex items-center justify-between">
+                                <span class="text-[10px] font-bold text-brand-400 uppercase tracking-wider">${v.category}</span>
+                                <span class="text-[11px] font-bold text-amber-400 flex items-center space-x-1">
+                                    <i class="fa-solid fa-star text-[10px]"></i>
+                                    <span>${v.rating}</span>
+                                </span>
+                            </div>
+                            <h3 class="text-sm font-extrabold text-white group-hover:text-brand-400 transition-colors truncate">
+                                ${v.title}
+                            </h3>
+                            <p class="text-[11px] text-slate-400 line-clamp-2 leading-snug">
+                                ${v.description}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="px-4 pb-4 pt-1 flex items-center justify-between text-[10px] text-slate-500 border-t border-slate-800/40 mt-2">
+                        <span>${v.genre}</span>
+                        <span class="font-bold text-slate-400 group-hover:text-slate-200">Watch <i class="fa-solid fa-arrow-right ml-1"></i></span>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Initialize Firebase Listeners & Fallbacks
+        async function initCloudSync() {
+            try {
+                await signInAnonymously(auth);
+            } catch (err) {
+                console.warn("Auth initialization fallback:", err);
+            }
+
+            const videosCol = collection(db, `artifacts/${appId}/public/data/videos`);
+
+            // Real-Time Cross-Device Synchronization Snapshot with Permission Fallback
+            onSnapshot(videosCol, (snapshot) => {
+                if (snapshot.empty) {
+                    defaultVideosSeed.forEach(async (item) => {
+                        try {
+                            await setDoc(doc(videosCol, item.id), item);
+                        } catch (e) {
+                            console.warn("Permission restricted on doc creation fallback:", e);
+                        }
+                    });
+                    if (window.state.videos.length === 0) {
+                        window.state.videos = [...defaultVideosSeed];
+                        renderApp();
+                    }
+                } else {
+                    const loadedVideos = [];
+                    snapshot.forEach(docSnap => {
+                        loadedVideos.push({ id: docSnap.id, ...docSnap.data() });
+                    });
+                    window.state.videos = loadedVideos;
+                    renderApp();
+                    
+                    const adminModal = document.getElementById('admin-modal');
+                    if (adminModal && !adminModal.classList.contains('hidden')) {
+                        window.renderAdminVideoList();
+                    }
+                }
+            }, (error) => {
+                console.warn("Firestore snapshot error (using local memory fallback):", error);
+                if (window.state.videos.length === 0) {
+                    window.state.videos = [...defaultVideosSeed];
+                    renderApp();
+                }
+            });
+        }
+
+        window.onload = function() {
+            updateProfileUI();
+            initCloudSync();
+        };
     </script>
 </body>
 </html>
